@@ -1,0 +1,116 @@
+.
+├── README.md
+├── app
+│   ├── api
+│   │   ├── auth
+│   │   │   └── [...nextauth]
+│   │   │       └── route.js
+│   │   ├── lead
+│   │   │   └── route.js
+│   │   ├── stripe
+│   │   │   ├── create-checkout
+│   │   │   │   └── route.js
+│   │   │   └── create-portal
+│   │   │       └── route.js
+│   │   └── webhook
+│   │       ├── mailgun
+│   │       │   └── route.js
+│   │       └── stripe
+│   │           └── route.js
+│   ├── apple-icon.png
+│   ├── blog
+│   │   ├── [articleId]
+│   │   │   └── page.js
+│   │   ├── _assets
+│   │   │   ├── components
+│   │   │   │   ├── Avatar.js
+│   │   │   │   ├── BadgeCategory.js
+│   │   │   │   ├── CardArticle.js
+│   │   │   │   ├── CardCategory.js
+│   │   │   │   └── HeaderBlog.js
+│   │   │   ├── content.js
+│   │   │   └── images
+│   │   │       └── authors
+│   │   │           └── marc.png
+│   │   ├── author
+│   │   │   └── [authorId]
+│   │   │       └── page.js
+│   │   ├── category
+│   │   │   └── [categoryId]
+│   │   │       └── page.js
+│   │   ├── layout.js
+│   │   └── page.js
+│   ├── dashboard
+│   │   ├── layout.js
+│   │   └── page.js
+│   ├── error.js
+│   ├── favicon.ico
+│   ├── globals.css
+│   ├── icon.png
+│   ├── layout.js
+│   ├── not-found.js
+│   ├── opengraph-image.png
+│   ├── page.js
+│   ├── privacy-policy
+│   │   └── page.js
+│   ├── tos
+│   │   └── page.js
+│   └── twitter-image.png
+├── components
+│   ├── BetterIcon.js
+│   ├── ButtonAccount.js
+│   ├── ButtonCheckout.js
+│   ├── ButtonGradient.js
+│   ├── ButtonLead.js
+│   ├── ButtonPopover.js
+│   ├── ButtonSignin.js
+│   ├── ButtonSupport.js
+│   ├── CTA.js
+│   ├── FAQ.js
+│   ├── FeaturesAccordion.js
+│   ├── FeaturesGrid.js
+│   ├── FeaturesListicle.js
+│   ├── Footer.js
+│   ├── Header.js
+│   ├── Hero.js
+│   ├── LayoutClient.js
+│   ├── Modal.js
+│   ├── Pricing.js
+│   ├── Problem.js
+│   ├── Testimonial1Small.js
+│   ├── TestimonialRating.js
+│   ├── Testimonials1.js
+│   ├── Testimonials11.js
+│   ├── Testimonials3.js
+│   ├── TestimonialsAvatars.js
+│   └── WithWithout.js
+├── config.js
+├── jsconfig.json
+├── libs
+│   ├── api.js
+│   ├── gpt.js
+│   ├── mailgun.js
+│   ├── mongo.js
+│   ├── mongoose.js
+│   ├── next-auth.js
+│   ├── seo.js
+│   └── stripe.js
+├── models
+│   ├── Lead.js
+│   ├── User.js
+│   └── plugins
+│       └── toJSON.js
+├── next-sitemap.config.js
+├── next.config.js
+├── node_modules
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── public
+│   └── blog
+│       └── introducing-supabase
+│           └── header.png
+├── structure.txt.
+└── tailwind.config.js
+
+2555 directories, 24701 files

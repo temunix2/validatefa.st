@@ -22,7 +22,7 @@ const Hero = () => {
         </a>
 
         <h1 className="font-extrabold text-4xl lg:text-6xl tracking-tight md:-mb-4">
-          Ship your startup in days, not weeks
+          Ship your startup in days, not weeks!!
         </h1>
         <p className="text-lg opacity-80 leading-relaxed">
           The NextJS boilerplate with all you need to build your SaaS, AI tool,
