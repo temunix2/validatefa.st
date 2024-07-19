@@ -87,7 +87,7 @@ const config = {
     theme: "emerald",
     // REQUIRED — This color will be reflected on the whole app outside of the document (loading bar, Chrome tabs, etc..). By default it takes the primary color from your DaisyUI theme (make sure to update your the theme name after "data-theme=")
     // OR you can just do this to use a custom color: main: "#f37055". HEX only.
-    personaChatTheme: "lofi", // Theme specifically for the PersonaChatPage
+    personaChatTheme: "nord", // Theme specifically for the PersonaChatPage
     main: themes["emerald"]["primary"],
   },
   auth: {

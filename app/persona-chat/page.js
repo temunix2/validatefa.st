@@ -23,11 +23,15 @@ const personaDescriptions = {
   scribe: "A technical expert who hones the craft of writing to its finest detail."
 };
 
+const writerLevels = ['Beginner', 'Intermediate', 'Advanced'];
+
 export default function PersonaChatPage() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [selectedPersona, setSelectedPersona] = useState(writingPersonas[0]);
+  const [isLoading, setIsLoading] = useState(false);
   const { data: session, status } = useSession();
+  const [writerLevel, setWriterLevel] = useState('Beginner');
   const router = useRouter();
 
   useEffect(() => {
@@ -49,6 +53,7 @@ export default function PersonaChatPage() {
     const newMessage = { role: 'user', content: inputMessage };
     setMessages(prev => [...prev, newMessage]);
     setInputMessage('');
+    setIsLoading(true);
 
     try {
       const response = await fetch('/api/persona', {
@@ -58,7 +63,8 @@ export default function PersonaChatPage() {
           user_id: session?.user?.id,
           message: inputMessage,
           persona: selectedPersona.id,
-          prompt: selectedPersona.prompt
+          prompt: selectedPersona.prompt,
+          writerLevel: writerLevel
         }),
       });
       const data = await response.json();
@@ -76,6 +82,8 @@ export default function PersonaChatPage() {
         personaName: selectedPersona.name,
         personaEmoji: selectedPersona.emoji
       }]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -87,14 +95,16 @@ export default function PersonaChatPage() {
       <Header />
       <div className="max-w-6xl mx-auto p-4 bg-base-100">
         <h1 className="text-3xl font-bold text-primary mb-4">Chat with Writing {personaTerms.plural}</h1>
-        <div className="flex space-x-4">
+        <div className="flex">
           {/* Chat Section */}
-          <div className="flex-grow space-y-4">
+          <div className="flex-grow mr-4">
             <div className="bg-base-200 shadow-lg rounded-lg p-4 h-[70vh] overflow-y-auto space-y-4">
               {messages.map((msg, index) => (
                 <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[70%] p-3 rounded-lg ${
-                    msg.role === 'user' ? 'bg-primary text-primary-content' : 'bg-secondary text-secondary-content'
+                    msg.role === 'user' 
+                      ? 'bg-neutral text-neutral-content' 
+                      : 'bg-base-300 text-base-content'
                   }`}>
                     {msg.role === 'persona' && (
                       <div className="font-bold mb-1">
@@ -107,8 +117,13 @@ export default function PersonaChatPage() {
                   </div>
                 </div>
               ))}
+              {isLoading && (
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              )}
             </div>
-            <form onSubmit={sendMessage} className="flex space-x-2">
+            <form onSubmit={sendMessage} className="flex space-x-2 mt-4">
               <input
                 type="text"
                 value={inputMessage}
@@ -116,37 +131,59 @@ export default function PersonaChatPage() {
                 className="flex-grow p-2 input input-bordered input-primary"
                 placeholder="Type your message..."
               />
-              <button type="submit" className="btn btn-primary">Send</button>
+              <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                {isLoading ? 'Sending...' : 'Send'}
+              </button>
             </form>
           </div>
 
-          {/* Persona Selection Section */}
-          <div className="w-64 space-y-4">
+          {/* Persona Selection and Writer's Level Section */}
+          <div className="w-64 flex-shrink-0 space-y-4">
+            {/* Writer's Level Selection */}
             <div className="p-4 bg-base-200 text-base-content rounded-lg shadow-md">
-              <div className="font-bold text-lg">Current {personaTerms.singular}</div>
-              <div className="mt-2 p-2 bg-base-100 rounded">
-                <span className="text-2xl">{selectedPersona.emoji}</span>
-                <span className="font-bold ml-2">{selectedPersona.name}</span>
+              <div className="font-bold text-lg mb-2">Writer's Level</div>
+              <select 
+                value={writerLevel} 
+                onChange={(e) => setWriterLevel(e.target.value)}
+                className="select select-primary w-full max-w-xs"
+              >
+                {writerLevels.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Current Persona Display */}
+            <div className="p-4 bg-base-200 text-base-content rounded-lg shadow-md">
+              <div className="font-bold text-lg mb-2">Current {personaTerms.singular}</div>
+              <div className="mt-2 p-2 bg-base-100 rounded flex items-center">
+                <span className="text-2xl mr-2">{selectedPersona.emoji}</span>
+                <span className="font-bold">{selectedPersona.name}</span>
               </div>
               <div className="mt-2 text-sm">
                 {personaDescriptions[selectedPersona.id]}
               </div>
             </div>
-            <div className="bg-base-200 rounded-lg shadow-md">
-              <h2 className="text-lg font-semibold p-3 bg-base-300 rounded-t-lg">Select a {personaTerms.singular}</h2>
-              <div className="h-[50vh] overflow-y-auto p-2">
+
+            <div className="bg-base-200 rounded-lg shadow-md flex-grow flex flex-col">
+              <h2 className="text-lg font-semibold p-3 bg-base-300 rounded-t-lg">
+                Select a {personaTerms.singular}
+              </h2>
+              <div className="overflow-y-auto p-2 flex-grow">
                 {writingPersonas.map(persona => (
                   <button
                     key={persona.id}
                     onClick={() => setSelectedPersona(persona)}
-                    className={`w-full px-4 py-2 rounded text-left mb-2 transition-colors duration-200 ${
+                    className={`w-full px-4 py-2 rounded text-left mb-2 transition-colors duration-200 flex items-center ${
                       selectedPersona.id === persona.id
                         ? 'bg-primary text-primary-content shadow-md'
                         : 'bg-base-100 hover:bg-base-300'
                     }`}
                   >
                     <span className="text-xl mr-2">{persona.emoji}</span>
-                    {persona.name}
+                    <span className="text-sm">{persona.name}</span>
                   </button>
                 ))}
               </div>
