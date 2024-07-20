@@ -26,18 +26,15 @@ const config = {
         //  REQUIRED - Name of the plan, displayed on the pricing page
         name: "Starter",
         // A friendly description of the plan, displayed on the pricing page. Tip: explain why this plan and not others
-        description: "Perfect for small projects",
+        description: "Kickstart your storytelling adventure",
         // The price you want to display, the one user will be charged on Stripe.
-        price: 20,
+        price: 15,
         // If you have an anchor price (i.e. $29) that you want to display crossed out, put it here. Otherwise, leave it empty
-        priceAnchor: 50,
+        priceAnchor: 30,
         features: [
-          {
-            name: "NextJS boilerplate",
-          },
-          { name: "User oauth" },
-          { name: "Database" },
-          { name: "Emails" },
+          { name: "Craft short stories with 5,000 word capacity" },
+          { name: "Explore 3 unique AI writing styles" },
+          { name: "Boost your skills with beginner-friendly feedback" },
         ],
       },
       {
@@ -48,18 +45,31 @@ const config = {
             ? "price_1PdaCqGn65zs7jMVYQQw65Bj"
             : "price_456",
         name: "Advanced",
-        description: "You need more power",
-        price: 99,
-        priceAnchor: 149,
+        description: "Elevate your writing to new heights",
+        price: 25,
+        priceAnchor: 50,
         features: [
-          {
-            name: "NextJS boilerplate",
-          },
-          { name: "User oauth" },
-          { name: "Database" },
-          { name: "Emails" },
-          { name: "1 year of updates" },
-          { name: "24/7 support" },
+          { name: "Expand your horizons with 25,000 word capacity" },
+          { name: "Diversify your voice with 6 AI writing personas" },
+          { name: "Master your craft with advanced writing feedback" },
+          { name: "Enjoy all Basic features and more!" },
+        ],
+      },
+      {
+        priceId:
+          process.env.NODE_ENV === "development"
+            ? "price_1PdaCqGn65zs7jMVYQQw65Bj"
+            : "price_456",
+        name: "Professional",
+        description: "Unlock your full creative potential",
+        price: 50,
+        priceAnchor: 100,
+        features: [
+          { name: "Conquer epics with 100,000 word capacity" },
+          { name: "Unlimited AI personas + craft your unique style" },
+          { name: "Elevate accuracy with powerful research tools" },
+          { name: "Skyrocket productivity with advanced tools" },
+          { name: "Access all Pro features and beyond!" },
         ],
       },
     ],
