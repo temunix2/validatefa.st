@@ -15,11 +15,12 @@ export async function POST(request) {
   const { message, user_id, persona, prompt, writerLevel } = body;
 
   try {
+    const combinedPrompt = `${prompt} The writer's level is: ${writerLevel}`;
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: prompt },
-        { role: "system", content: `The writer's level is: ${writerLevel}` },
+        { role: "system", content: combinedPrompt },
         { role: "user", content: message }
       ],
     });

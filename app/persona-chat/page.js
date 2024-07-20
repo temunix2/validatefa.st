@@ -12,15 +12,12 @@ import config from '@/config';
 
 // Add brief descriptions for each persona
 const personaDescriptions = {
-  creative_writer: "A master storyteller who excels in narrative crafting and character development.",
-  editor: "A sharp-eyed professional who refines and polishes written work to perfection.",
-  poet: "An artistic soul who weaves words into rhythmic and evocative verses.",
-  writing_coach: "A supportive guide who helps writers develop their skills and overcome challenges.",
   motivator: "An enthusiastic cheerleader who keeps writers inspired and moving forward.",
   critic: "An analytical mind who provides constructive feedback to elevate your writing.",
   innovator: "A creative thinker who pushes boundaries and sparks unique ideas.",
   mentor: "An experienced sage who shares wisdom from years in the writing world.",
-  scribe: "A technical expert who hones the craft of writing to its finest detail."
+  editor: "A sharp-eyed professional who refines and polishes written work to perfection.",
+  research: "A dedicated expert providing factual, research-based input to enhance the authenticity and depth of speculative fiction.",
 };
 
 const writerLevels = ['Beginner', 'Intermediate', 'Advanced'];
@@ -31,7 +28,7 @@ export default function PersonaChatPage() {
   const [selectedPersona, setSelectedPersona] = useState(writingPersonas[0]);
   const [isLoading, setIsLoading] = useState(false);
   const { data: session, status } = useSession();
-  const [writerLevel, setWriterLevel] = useState('Beginner');
+  const [writerLevel, setWriterLevel] = useState('Intermediate');
   const router = useRouter();
 
   useEffect(() => {
@@ -40,6 +37,37 @@ export default function PersonaChatPage() {
     }
     // Set the theme for this page
     document.documentElement.setAttribute('data-theme', config.colors.personaChatTheme);
+    
+    // Add initial mentor message
+    const mentorPersona = writingPersonas.find(persona => persona.id === 'mentor');
+    if (mentorPersona && messages.length === 0) {
+      setMessages([{
+        role: 'persona',
+        content: `# Welcome, aspiring wordsmith! 🖋️✨
+
+I'm the Mentor, and I'm thrilled to introduce you to your new writing companions.
+
+Ready to elevate your writing? Here's how to dive in:
+
+**1.** **Choose Your Guide** 👥  
+   On the right, you'll find a colorful cast of writing personas. Each brings a unique perspective to your work. Feel free to switch between them – variety is the spice of writing!
+
+**2.** **Set Your Level** 📊  
+   Are you just starting out, or are you refining your craft? Select your writing level to receive tailored advice that meets you where you are.
+
+**3.** **Share Your Words** 📝  
+   Type your writing sample in the chat box below. Don't be shy – every great author started with a first draft!
+
+**4.** **Engage and Explore** 💬  
+   Chat with the personas, ask questions, and watch your writing transform. Remember, each persona offers a different flavor of feedback.
+
+Whether you're crafting the next bestseller, penning poetry, or polishing your prose, we're here to help you shine. So, which writing adventure shall we embark on today?
+
+**Go ahead, select a persona and let's bring your words to life!**`,
+        personaName: mentorPersona.name,
+        personaEmoji: mentorPersona.emoji
+      }]);
+    }
     // Cleanup function to reset the theme when leaving the page
     return () => {
       document.documentElement.setAttribute('data-theme', config.colors.theme);
@@ -111,7 +139,12 @@ export default function PersonaChatPage() {
                         {msg.personaEmoji} {msg.personaName}
                       </div>
                     )}
-                    <ReactMarkdown className="prose max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="whitespace-pre-wrap">{children}</p>,
+                      }}
+                      className="prose max-w-none break-words"
+                    >
                       {msg.content}
                     </ReactMarkdown>
                   </div>
