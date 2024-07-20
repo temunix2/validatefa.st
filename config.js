@@ -32,8 +32,8 @@ const config = {
         // If you have an anchor price (i.e. $29) that you want to display crossed out, put it here. Otherwise, leave it empty
         priceAnchor: 30,
         features: [
+          { name: "Explore unique AI writing personas including The Editor, The Critic, and The Motivator" },
           { name: "Craft short stories with 5,000 word capacity" },
-          { name: "Explore 3 unique AI writing styles" },
           { name: "Boost your skills with beginner-friendly feedback" },
         ],
       },
@@ -50,7 +50,7 @@ const config = {
         priceAnchor: 50,
         features: [
           { name: "Expand your horizons with 25,000 word capacity" },
-          { name: "Diversify your voice with 6 AI writing personas" },
+          { name: "Diversify your voice with an expanded set of AI writing personas" },
           { name: "Master your craft with advanced writing feedback" },
           { name: "Enjoy all Basic features and more!" },
         ],
@@ -66,7 +66,7 @@ const config = {
         priceAnchor: 100,
         features: [
           { name: "Conquer epics with 100,000 word capacity" },
-          { name: "Unlimited AI personas + craft your unique style" },
+          { name: "Access to all AI writing personas" },
           { name: "Elevate accuracy with powerful research tools" },
           { name: "Skyrocket productivity with advanced tools" },
           { name: "Access all Pro features and beyond!" },
