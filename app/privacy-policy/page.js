@@ -96,7 +96,7 @@ We may update this Privacy Policy from time to time to reflect changes in our pr
 
 If you have any questions, concerns, or requests related to this Privacy Policy, you can contact us at:
 
-Email: ngatsetan@jhadruk.com
+Email: temunix@wgroup.jhadruk.com
 
 By using Writinggroup.ai, you consent to the terms of this Privacy Policy.`}
         </pre>

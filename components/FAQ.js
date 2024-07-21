@@ -2,29 +2,35 @@
 
 import { useRef, useState } from "react";
 
-// <FAQ> component is a lsit of <Item> component
+// <FAQ> component is a list of <Item> component
 // Just import the FAQ & add your FAQ content to the const faqList
 
 const faqList = [
   {
     question: "What do I get exactly?",
-    answer: <div className="space-y-2 leading-relaxed">Loreum Ipseum</div>,
+    answer: <div className="space-y-2 leading-relaxed">You will receive an AI-powered writing group that provides feedback on your writing. Multiple AI personas, each offering a unique perspective, will help you grow as a writer.</div>,
   },
   {
-    question: "Can I get a refund?",
+    question: "How does the AI writing group work?",
     answer: (
       <p>
-        Yes! You can request a refund within 7 days of your purchase. Reach out
-        by email.
+       Our AI Writing Group is like having a team of expert writers at your fingertips, each with their own unique strengths and perspectives. Imagine receiving personalized feedback from multiple angles, all tailored to help you become a better writer.
       </p>
     ),
   },
   {
-    question: "I have another question",
+    question: "Will the AI write for me?",
     answer: (
-      <div className="space-y-2 leading-relaxed">Cool, contact us by email</div>
+      <div className="space-y-2 leading-relaxed">No, the AI will not write for you. This tool is designed to be a collaborative partner, providing feedback and suggesting possible directions for your story. It can guide you with new ideas and perspectives to enhance your writing.</div>
     ),
   },
+  {
+    question: "I have another question?",
+    answer: (
+      <div className="space-y-2 leading-relaxed">Shoot me an email at temunix@wgroup.jhadruk.com </div>
+    ),
+  },
+  
 ];
 
 const Item = ({ item }) => {

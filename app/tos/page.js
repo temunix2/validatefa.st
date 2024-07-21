@@ -90,7 +90,7 @@ Contact Information
 
 If you have any questions, concerns, or requests related to these Terms, you can contact us at:
 
-Email: ngatsetan@jhadruk.com
+Email: temunix@wgroup.jhadruk.com
 
 By using Writinggroup.ai, you consent to the terms of these Terms & Services.
 

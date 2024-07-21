@@ -5,7 +5,7 @@ const config = {
   appName: "WritingGroupAI",
   // REQUIRED: a short description of your app for SEO tags (can be overwritten)
   appDescription:
-    "The NextJS boilerplate with all you need to build your SaaS, AI tool, or any other web app.",
+    "Consistent feedback in minutes, not months! Your always-available AI writing circle.",
   // REQUIRED (no https://, not trialing slash at the end, just the naked domain)
   domainName: "jhadruk.com",
   crisp: {
@@ -33,7 +33,7 @@ const config = {
         priceAnchor: 30,
         features: [
           { name: "Explore unique AI writing personas including The Editor, The Critic, and The Motivator" },
-          { name: "Craft short stories with 5,000 word capacity" },
+          { name: "Craft short stories with 5,000 word capacity per review" },
           { name: "Boost your skills with beginner-friendly feedback" },
         ],
       },
@@ -49,7 +49,7 @@ const config = {
         price: 25,
         priceAnchor: 50,
         features: [
-          { name: "Expand your horizons with 25,000 word capacity" },
+          { name: "Expand your horizons with 25,000 word capacity per review" },
           { name: "Diversify your voice with an expanded set of AI writing personas" },
           { name: "Master your craft with advanced writing feedback" },
           { name: "Enjoy all Basic features and more!" },
@@ -65,7 +65,7 @@ const config = {
         price: 50,
         priceAnchor: 100,
         features: [
-          { name: "Conquer epics with 100,000 word capacity" },
+          { name: "Conquer epics with 100,000 word capacity per review" },
           { name: "Access to all AI writing personas" },
           { name: "Elevate accuracy with powerful research tools" },
           { name: "Skyrocket productivity with advanced tools" },
