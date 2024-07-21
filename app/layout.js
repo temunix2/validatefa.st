@@ -1,5 +1,5 @@
 import { Inter } from "next/font/google";
-import PlausibleProvider from "next-plausible";
+// import PlausibleProvider from "next-plausible";
 import { getSEOTags } from "@/libs/seo";
 import ClientLayout from "@/components/LayoutClient";
 import config from "@/config";

@@ -62,7 +62,7 @@ Ready to elevate your writing? Here's how to dive in:
 
 Whether you're crafting the next bestseller, penning poetry, or polishing your prose, we're here to help you shine. So, which writing adventure shall we embark on today?  
 
-**Go ahead, select a persona and let's bring your words to life!**`,
+**Go ahead, select a persona and let&apos;s bring your words to life!**`,
         personaName: mentorPersona.name,
         personaEmoji: mentorPersona.emoji
       }]);
@@ -71,7 +71,7 @@ Whether you're crafting the next bestseller, penning poetry, or polishing your p
     return () => {
       document.documentElement.setAttribute('data-theme', config.colors.theme);
     };
-  }, [status, router]);
+  }, [status, router, messages]);
 
   const sendMessage = async (e) => {
     e.preventDefault();

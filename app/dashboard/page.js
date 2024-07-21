@@ -1,8 +1,8 @@
 import Header from "@/components/Header";
 import ButtonAccount from "@/components/ButtonAccount";
-import ButtonCheckout from "@/components/ButtonCheckout";
+// import ButtonCheckout from "@/components/ButtonCheckout";
 import ButtonGradient from "@/components/ButtonGradient";
-import config from "@/config";
+// import config from "@/config";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/next-auth";
 import connectMongo from "@/libs/mongoose";
