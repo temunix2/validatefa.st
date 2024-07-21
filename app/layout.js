@@ -23,7 +23,12 @@ export default function RootLayout({ children }) {
     <html lang="en" data-theme={config.colors.theme} className={font.className}>
       {config.domainName && (
         <head>
-          <PlausibleProvider domain={config.domainName} />
+          <script
+        defer
+        data-domain={config.domainName}
+        data-api="/plausible/api/event"
+        src="/plausible/js/script.js"
+        ></script>
         </head>
       )}
       <body>
