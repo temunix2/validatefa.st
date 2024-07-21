@@ -121,7 +121,7 @@ Whether you're crafting the next bestseller, penning poetry, or polishing your p
     <LayoutClient>
       <Header />
       <div className="max-w-6xl mx-auto p-4 bg-base-100">
-        <h1 className="text-3xl font-bold text-primary mb-4">Chat with Writing {personaTerms.plural}</h1>
+        <h1 className="text-3xl font-bold text-primary mb-4">{personaTerms.plural} Chat </h1>
         <div className="flex">
           {/* Chat Section */}
           <div className="flex-grow mr-4">
