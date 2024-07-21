@@ -208,7 +208,7 @@ Whether you&apos;re crafting the next bestseller, penning poetry, or polishing y
             </div>
             {/* Writer's Level Selection */}
             <div className="p-4 bg-base-200 text-base-content rounded-lg shadow-md">
-              <div className="font-bold text-lg mb-2">Writer's Level</div>
+              <div className="font-bold text-lg mb-2">Writer&apos;s Level</div>
               <select 
                 value={writerLevel} 
                 onChange={(e) => setWriterLevel(e.target.value)}
