@@ -32,8 +32,9 @@ const Hero = () => {
         <p className="text-lg opacity-80 leading-relaxed">
         Your always-available AI writing circle. Get instant, diverse feedback on your stories without the inconsistency of traditional groups. Elevate your writing anytime.
         </p>
-        <div className="btn btn-primary btn-wide">
-          <ButtonCheckout priceId={defaultPriceId}>
+        <div className="w-full sm:w-auto">
+          <ButtonCheckout priceId={defaultPriceId} 
+          style="gradient" className="btn-wide">
             Get {config.appName}
           </ButtonCheckout>
         </div>

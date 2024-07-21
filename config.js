@@ -22,7 +22,7 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1Pf5EuGn65zs7jMVAJ9DdXAz"
-            : "price_456",
+            : "price_1Pf5EuGn65zs7jMVAJ9DdXAz",
         //  REQUIRED - Name of the plan, displayed on the pricing page
         name: "Starter",
         // A friendly description of the plan, displayed on the pricing page. Tip: explain why this plan and not others
@@ -43,7 +43,7 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1Pf5FHGn65zs7jMVlucf4vVN"
-            : "price_456",
+            : "price_1Pf5FHGn65zs7jMVlucf4vVN",
         name: "Advanced",
         description: "Elevate your writing to new heights",
         price: 25,
@@ -59,7 +59,7 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1Pf5GVGn65zs7jMVq49yO3ss"
-            : "price_456",
+            : "price_1Pf5GVGn65zs7jMVq49yO3ss",
         name: "Professional",
         description: "Unlock your full creative potential",
         price: 50,
