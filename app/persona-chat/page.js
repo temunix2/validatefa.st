@@ -45,22 +45,22 @@ export default function PersonaChatPage() {
         role: 'persona',
         content: `# Welcome, aspiring wordsmith! 🖋️✨
 
-I'm the Mentor, and I'm thrilled to introduce you to your new writing companions.
+I&apos;m the Mentor, and I&apos;m thrilled to introduce you to your new writing companions.
 
-Ready to elevate your writing? Here's how to dive in:  
+Ready to elevate your writing? Here&apos;s how to dive in:  
 **1.** **Choose Your Guide** 👥
-   On the right, you'll find a colorful cast of writing personas. Each brings a unique perspective to your work. Feel free to switch between them – variety is the spice of writing!
+   On the right, you&apos;ll find a colorful cast of writing personas. Each brings a unique perspective to your work. Feel free to switch between them &ndash; variety is the spice of writing!
 
 **2.** **Set Your Level** 📊
    Are you just starting out, or are you refining your craft? Select your writing level to receive tailored advice that meets you where you are.
 
 **3.** **Share Your Words** 📝
-   Type your writing sample in the chat box below. Don't be shy – every great author started with a first draft!
+   Type your writing sample in the chat box below. Don&apos;t be shy &ndash; every great author started with a first draft!
 
 **4.** **Engage and Explore** 💬
    Chat with the personas, ask questions, and watch your writing transform. Remember, each persona offers a different flavor of feedback.
 
-Whether you're crafting the next bestseller, penning poetry, or polishing your prose, we're here to help you shine. So, which writing adventure shall we embark on today?  
+Whether you&apos;re crafting the next bestseller, penning poetry, or polishing your prose, we&apos;re here to help you shine. So, which writing adventure shall we embark on today?  
 
 **Go ahead, select a persona and let&apos;s bring your words to life!**`,
         personaName: mentorPersona.name,

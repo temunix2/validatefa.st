@@ -47,7 +47,7 @@ const Problem = () => {
           97% of aspiring authors never finish their book
         </h2>
         <p className="max-w-xl mx-auto text-lg opacity-90 leading-relaxed mb-12 md:mb-20">
-        Writer's block, self-doubt, lack of guidance... There's so much to overcome alone
+          Writer&apos;s block, self-doubt, lack of guidance... There&apos;s so much to overcome alone
         </p>
 
         <div className="flex flex-col md:flex-row justify-center items-center md:items-start gap-6">
@@ -55,7 +55,7 @@ const Problem = () => {
 
           <Arrow extraStyle="max-md:-scale-x-100 md:-rotate-90" />
 
-          <Step emoji="😮‍💨" text="Unsure of story's direction" />
+          <Step emoji="😮‍💨" text="Unsure of story&apos;s direction" />
 
           <Arrow extraStyle="md:-scale-x-100 md:-rotate-90" />
 
