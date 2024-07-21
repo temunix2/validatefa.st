@@ -53,6 +53,7 @@ export const authOptions = {
     brandColor: config.colors.main,
     // Add you own logo below. Recommended size is rectangle (i.e. 200x50px) and show your logo + name.
     // It will be used in the login flow to display your logo. If you don't add it, it will look faded.
-    logo: `https://${config.domainName}/logoAndName.png`,
+    logo: `/logoAndName.png`,
+    // logo: `https://${config.domainName}/logoAndName.png`,
   },
 };
