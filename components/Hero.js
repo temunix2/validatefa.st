@@ -33,7 +33,7 @@ const Hero = () => {
         Your always-available AI writing circle. Get instant, diverse feedback on your stories without the inconsistency of traditional groups. Elevate your writing anytime.
         </p>
         <div className="w-full sm:w-auto">
-          <ButtonCheckout priceId={defaultPriceId} 
+          <ButtonCheckout mode = "subscription" priceId={defaultPriceId} 
           style="gradient" className="btn-wide">
             Get {config.appName}
           </ButtonCheckout>
