@@ -73,6 +73,12 @@ const config = {
         ],
       },
     ],
+    stripeBilling: {
+      url:
+        process.env.NODE_ENV === "development"
+          ? "https://billing.stripe.com/p/login/test_eVa5mgdFO1GKca48ww"
+          : "https://billing.stripe.com/p/login/8wM29WbdM5Wy9zObII",
+    }
   },
   aws: {
     // If you use AWS S3/Cloudfront, put values in here

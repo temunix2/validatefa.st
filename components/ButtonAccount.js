@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Popover, Transition } from "@headlessui/react";
 import { useSession, signOut } from "next-auth/react";
 import apiClient from "@/libs/api";
+import config from "@/config";
 
 // A button to show user some account actions
 //  1. Billing: open a Stripe Customer Portal to manage their billing (cancel subscription, update payment method, etc.).
@@ -21,6 +22,9 @@ const ButtonAccount = () => {
   };
   const handleBilling = async () => {
     setIsLoading(true);
+
+    const url = config.stripe.stripeBilling.url
+
 
     try {
       const { url } = await apiClient.post("/stripe/create-portal", {
