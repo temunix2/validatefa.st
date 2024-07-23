@@ -13,7 +13,11 @@ export const dynamic = "force-dynamic";
 export default async function Dashboard() {
   await connectMongo();
   const session = await getServerSession(authOptions);
-  const user = await User.findById(session.user.id);
+  const user = session ? await User.findById(session.user.id) : null;
+
+  const hasPaid = user && user.customerId;
+  const buttonLink = hasPaid ? "/persona-chat" : "/#pricing";
+  const buttonTitle = hasPaid ? "Go to your Writing Group AI" : "Upgrade to Premium";
 
   return (
     <>
@@ -28,8 +32,8 @@ export default async function Dashboard() {
           </div>
           <div className="bg-white shadow-md rounded-lg p-6 space-y-6">
             <div>
-              <p className="text-xl font-semibold">Welcome, {user.name} 👋</p>
-              <p className="mt-2">Thank you for joining us! We encourage you to start a chat with one of our personas and explore the experience.</p>
+              <p className="text-xl font-semibold">Welcome, {user?.name} 👋</p>
+              <p className="mt-2">Thank you for joining us! We encourage you to explore the experience.</p>
             </div>
             <div className="border-t pt-4">
               <h2 className="text-lg font-semibold mb-2">Account Management</h2>
@@ -37,14 +41,21 @@ export default async function Dashboard() {
                 To manage your subscription and billing details, click the button in the top right next to User Dashboard.
               </p>
             </div>
-            <div>
+            <div className="border-t pt-4">
               <h2 className="text-lg font-semibold mb-2">Quick Actions</h2>
               <div className="space-y-4">
-                <Link href="/persona-chat" passHref>
-                  <ButtonGradient title="Go to your Writing Group AI" />
+                <Link href={buttonLink} passHref>
+                  <ButtonGradient title={buttonTitle} />
                 </Link>
               </div>
             </div>
+            {!hasPaid && (
+              <div className="border-t pt-4">
+                <p className="text-sm text-gray-600">
+                  Upgrade to premium to access all features, including the Writing Group AI.
+                </p>
+              </div>
+            )}
           </div>
         </section>
       </main>
