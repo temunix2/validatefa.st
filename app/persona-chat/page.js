@@ -10,6 +10,7 @@ import Footer from '@/components/Footer';
 import { writingPersonas, personaTerms } from './writingPersonas';
 import config from '@/config';
 
+
 // Add brief descriptions for each persona
 const personaDescriptions = {
   motivator: "An enthusiastic cheerleader who keeps writers inspired and moving forward.",
@@ -21,6 +22,7 @@ const personaDescriptions = {
 };
 
 const writerLevels = ['Beginner', 'Intermediate', 'Advanced'];
+const MAX_WORDS = 50000; // Set your desired word limit here
 
 export default function PersonaChatPage() {
   const [messages, setMessages] = useState([]);
@@ -30,6 +32,10 @@ export default function PersonaChatPage() {
   const { data: session, status } = useSession();
   const [writerLevel, setWriterLevel] = useState('Intermediate');
   const router = useRouter();
+
+  const countWords = (str) => {
+    return str.trim().split(/\s+/).length;
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -76,6 +82,17 @@ Whether you&apos;re crafting the next bestseller, penning poetry, or polishing y
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
+
+    const wordCount = countWords(inputMessage);
+
+    if (wordCount > MAX_WORDS) {
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: `Your message exceeds the maximum word limit of you account. Please shorten your message.`,
+      }]);
+      setInputMessage('');
+      return;
+    }
 
     const newMessage = { role: 'user', content: inputMessage };
     setMessages(prev => [...prev, newMessage]);

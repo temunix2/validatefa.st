@@ -65,7 +65,7 @@ const config = {
         price: 50,
         priceAnchor: 100,
         features: [
-          { name: "Conquer epics with 100,000 word capacity per review" },
+          { name: "Conquer epics with 50,000 word capacity per review" },
           { name: "Access to all AI writing personas" },
           { name: "Elevate accuracy with powerful research tools" },
           { name: "Skyrocket productivity with advanced tools" },
