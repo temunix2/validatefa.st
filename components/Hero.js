@@ -35,7 +35,7 @@ const Hero = () => {
         <div className="w-full sm:w-auto">
           <ButtonCheckout mode = "subscription" priceId={defaultPriceId} 
           style="gradient" className="btn-wide">
-            Get {config.appName}
+            Enhance Your Writing
           </ButtonCheckout>
         </div>
 
