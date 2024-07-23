@@ -32,6 +32,8 @@ export default function PersonaChatPage() {
   const { data: session, status } = useSession();
   const [writerLevel, setWriterLevel] = useState('Intermediate');
   const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [hasPaid, setHasPaid] = useState(false);
 
   const countWords = (str) => {
     return str.trim().split(/\s+/).length;
@@ -40,6 +42,9 @@ export default function PersonaChatPage() {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/api/auth/signin');
+    } else if (status === 'authenticated') {
+      // Fetch user data
+      fetchUserData();
     }
     // Set the theme for this page
     document.documentElement.setAttribute('data-theme', config.colors.personaChatTheme);
@@ -79,9 +84,28 @@ Whether you&apos;re crafting the next bestseller, penning poetry, or polishing y
     };
   }, [status, router, messages]);
 
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch('/api/user');
+      const userData = await response.json();
+      setUser(userData);
+      setHasPaid(!!userData.customerId);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
+
+    if (!hasPaid) {
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: 'You need to upgrade to a paid account to use this feature. Please visit the pricing page to upgrade.',
+      }]);
+      return;
+    }
 
     const wordCount = countWords(inputMessage);
 
@@ -139,6 +163,17 @@ Whether you&apos;re crafting the next bestseller, penning poetry, or polishing y
       <Header />
       <div className="max-w-6xl mx-auto p-4 bg-base-100">
         <h1 className="text-3xl font-bold text-primary mb-4">{personaTerms.plural} Chat </h1>
+        {!hasPaid ? (
+          <div className="bg-warning text-warning-content p-4 rounded-lg mb-4">
+            <p>You need to upgrade to a paid account to use this feature.</p>
+            <button 
+              onClick={() => router.push('/#pricing')} 
+              className="btn btn-primary mt-2"
+            >
+              Upgrade Now
+            </button>
+          </div>
+        ) : (
         <div className="flex">
           {/* Chat Section */}
           <div className="flex-grow mr-4">
@@ -240,6 +275,7 @@ Whether you&apos;re crafting the next bestseller, penning poetry, or polishing y
             </div>
           </div>
         </div>
+        )}
       </div>
       <Footer />
     </LayoutClient>
