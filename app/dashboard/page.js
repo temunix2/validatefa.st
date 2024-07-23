@@ -20,20 +20,28 @@ export default async function Dashboard() {
       <Header />
       <main className="min-h-screen p-8 pb-24">
         <section className="max-w-xl mx-auto space-y-8">
-          <ButtonAccount />
-          <h1 className="text-3xl md:text-4xl font-extrabold">
-            User Dashboard
-          </h1>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 className="text-3xl md:text-4xl font-extrabold">
+              User Dashboard
+            </h1>
+            <ButtonAccount />
+          </div>
           <div className="bg-white shadow-md rounded-lg p-6 space-y-6">
             <div>
               <p className="text-xl font-semibold">Welcome, {user.name} 👋</p>
               <p className="mt-2">Thank you for joining us! We encourage you to start a chat with one of our personas and explore the experience.</p>
             </div>
+            <div className="border-t pt-4">
+              <h2 className="text-lg font-semibold mb-2">Account Management</h2>
+              <p className="text-sm text-gray-600 mb-2">
+                To manage your subscription and billing details, click the button in the top right next to User Dashboard.
+              </p>
+            </div>
             <div>
               <h2 className="text-lg font-semibold mb-2">Quick Actions</h2>
               <div className="space-y-4">
                 <Link href="/persona-chat" passHref>
-                  <ButtonGradient title="Start a Persona Chat" />
+                  <ButtonGradient title="Go to your Writing Group AI" />
                 </Link>
               </div>
             </div>

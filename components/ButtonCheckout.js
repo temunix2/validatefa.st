@@ -13,12 +13,15 @@ const ButtonCheckout = ({ priceId, mode = "subscription", style = "default", cla
 
   const handlePayment = async () => {
     setIsLoading(true);
+    
+
 
     try {
+
       const res = await apiClient.post("/stripe/create-checkout", {
         priceId,
         mode,
-        successUrl: window.location.href,
+        successUrl:`${window.location.origin}/dashboard`,
         cancelUrl: window.location.href,
       });
 
