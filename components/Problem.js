@@ -55,11 +55,11 @@ const Problem = () => {
 
           <Arrow extraStyle="max-md:-scale-x-100 md:-rotate-90" />
 
-          <Step emoji="😮‍💨" text="Unsure of story&apos;s direction" />
+          <Step emoji="😮‍💨" text="Receive vague, unhelpful feedback" />
 
           <Arrow extraStyle="md:-scale-x-100 md:-rotate-90" />
 
-          <Step emoji="😔" text="Give up on novel" />
+          <Step emoji="😔" text="Lose confidence in your story" />
         </div>
       </div>
     </section>
