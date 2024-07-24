@@ -23,10 +23,10 @@ const personaDescriptions = {
   const writerLevels = ['Beginner', 'Intermediate', 'Advanced'];
 
   export default function PersonaChatClient() {
+    const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const [selectedPersona, setSelectedPersona] = useState(writingPersonas[0]);
-    const [isLoading, setIsLoading] = useState(false);
     const { data: session, status } = useSession();
     const [writerLevel, setWriterLevel] = useState('Intermediate');
     const router = useRouter();
@@ -37,6 +37,9 @@ const personaDescriptions = {
     const MAX_WORDS = 50000;
   
     useEffect(() => {
+        // Set the theme for this page
+        document.documentElement.setAttribute('data-theme', config.colors.personaChatTheme);
+        
         if (typeof window !== 'undefined') {
           const initialHasPaid = window.initialHasPaid;
           setHasPaid(initialHasPaid);
@@ -46,9 +49,6 @@ const personaDescriptions = {
           console.log('Initial hasPaid value:', initialHasPaid);
           console.log('Debug info:', window.debugInfo);
         }
-
-      // Set the theme for this page
-      document.documentElement.setAttribute('data-theme', config.colors.personaChatTheme);
       
       // Add initial mentor message
       const mentorPersona = writingPersonas.find(persona => persona.id === 'mentor');
@@ -84,7 +84,7 @@ const personaDescriptions = {
       return () => {
         document.documentElement.setAttribute('data-theme', config.colors.theme);
       };
-    }, [messages]);
+    }, []);
 
     console.log('Current hasPaid state:', hasPaid);
   

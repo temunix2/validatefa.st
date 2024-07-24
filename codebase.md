@@ -231,6 +231,7 @@ module.exports = {
   "dependencies": {
     "@auth/mongodb-adapter": "^1.0.0",
     "@headlessui/react": "^1.7.18",
+    "aws4": "^1.13.0",
     "axios": "^1.6.8",
     "crisp-sdk-web": "^1.0.22",
     "eslint": "8.47.0",
@@ -238,6 +239,7 @@ module.exports = {
     "form-data": "^4.0.0",
     "mailgun.js": "^9.4.1",
     "mongodb": "^5.9.2",
+    "mongodb-client-encryption": "^2.9.1",
     "mongoose": "^7.6.10",
     "next": "^14.1.4",
     "next-auth": "^4.24.7",
@@ -394,7 +396,7 @@ const config = {
         price: 50,
         priceAnchor: 100,
         features: [
-          { name: "Conquer epics with 100,000 word capacity per review" },
+          { name: "Conquer epics with 50,000 word capacity per review" },
           { name: "Access to all AI writing personas" },
           { name: "Elevate accuracy with powerful research tools" },
           { name: "Skyrocket productivity with advanced tools" },
@@ -402,6 +404,12 @@ const config = {
         ],
       },
     ],
+    stripeBilling: {
+      url:
+        process.env.NODE_ENV === "development"
+          ? "https://billing.stripe.com/p/login/test_eVa5mgdFO1GKca48ww"
+          : "https://billing.stripe.com/p/login/8wM29WbdM5Wy9zObII",
+    }
   },
   aws: {
     // If you use AWS S3/Cloudfront, put values in here
@@ -596,10 +604,6 @@ public/sitemap-0.xml
 /wgenv/
 ```
 
-# public/logoandName.png
-
-This is a binary file of the type: Image
-
 # models/User.js
 
 ```js
@@ -687,500 +691,9 @@ export default mongoose.models.Lead || mongoose.model("Lead", leadSchema);
 
 ```
 
-# libs/stripe.js
+# public/logoandName.png
 
-```js
-import Stripe from "stripe";
-
-// This is used to create a Stripe Checkout for one-time payments. It's usually triggered with the <ButtonCheckout /> component. Webhooks are used to update the user's state in the database.
-export const createCheckout = async ({
-  priceId,
-  mode,
-  successUrl,
-  cancelUrl,
-  couponId,
-  clientReferenceId,
-  user,
-}) => {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-  const extraParams = {};
-
-  if (user?.customerId) {
-    extraParams.customer = user.customerId;
-  } else {
-    if (mode === "payment") {
-      extraParams.customer_creation = "always";
-      // The option below costs 0.4% (up to $2) per invoice. Alternatively, you can use https://zenvoice.io/ to create unlimited invoices automatically.
-      // extraParams.invoice_creation = { enabled: true };
-      extraParams.payment_intent_data = { setup_future_usage: "on_session" };
-    }
-    if (user?.email) {
-      extraParams.customer_email = user.email;
-    }
-    extraParams.tax_id_collection = { enabled: true };
-  }
-
-  const stripeSession = await stripe.checkout.sessions.create({
-    mode,
-    allow_promotion_codes: true,
-    client_reference_id: clientReferenceId,
-    line_items: [
-      {
-        price: priceId,
-        quantity: 1,
-      },
-    ],
-    discounts: couponId
-      ? [
-          {
-            coupon: couponId,
-          },
-        ]
-      : [],
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-    ...extraParams,
-  });
-
-  return stripeSession.url;
-};
-
-// This is used to create Customer Portal sessions, so users can manage their subscriptions (payment methods, cancel, etc..)
-export const createCustomerPortal = async ({ customerId, returnUrl }) => {
-  try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: returnUrl,
-    });
-
-    return portalSession.url;
-  } catch (e) {
-    console.error(e);
-    return null;
-  }
-};
-
-// This is used to get the uesr checkout session and populate the data so we get the planId the user subscribed to
-export const findCheckoutSession = async (sessionId) => {
-  try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["line_items"],
-    });
-
-    return session;
-  } catch (e) {
-    console.error(e);
-    return null;
-  }
-};
-
-```
-
-# libs/seo.js
-
-```js
-import config from "@/config";
-
-// These are all the SEO tags you can add to your pages.
-// It prefills data with default title/description/OG, etc.. and you can cusotmize it for each page.
-// It's already added in the root layout.js so you don't have to add it to every pages
-// But I recommend to set the canonical URL for each page (export const metadata = getSEOTags({canonicalUrlRelative: "/"});)
-// See https://shipfa.st/docs/features/seo
-export const getSEOTags = ({
-  title,
-  description,
-  keywords,
-  openGraph,
-  canonicalUrlRelative,
-  extraTags,
-} = {}) => {
-  return {
-    // up to 50 characters (what does your app do for the user?) > your main should be here
-    title: title || config.appName,
-    // up to 160 characters (how does your app help the user?)
-    description: description || config.appDescription,
-    // some keywords separated by commas. by default it will be your app name
-    keywords: keywords || [config.appName],
-    applicationName: config.appName,
-    // set a base URL prefix for other fields that require a fully qualified URL (.e.g og:image: og:image: 'https://yourdomain.com/share.png' => '/share.png')
-    metadataBase: new URL(
-      process.env.NODE_ENV === "development"
-        ? "http://localhost:3000/"
-        : `https://${config.domainName}/`
-    ),
-
-    openGraph: {
-      title: openGraph?.title || config.appName,
-      description: openGraph?.description || config.appDescription,
-      url: openGraph?.url || `https://${config.domainName}/`,
-      siteName: openGraph?.title || config.appName,
-      // If you add an opengraph-image.(jpg|jpeg|png|gif) image to the /app folder, you don't need the code below
-      // images: [
-      //   {
-      //     url: `https://${config.domainName}/share.png`,
-      //     width: 1200,
-      //     height: 660,
-      //   },
-      // ],
-      locale: "en_US",
-      type: "website",
-    },
-
-    twitter: {
-      title: openGraph?.title || config.appName,
-      description: openGraph?.description || config.appDescription,
-      // If you add an twitter-image.(jpg|jpeg|png|gif) image to the /app folder, you don't need the code below
-      // images: [openGraph?.image || defaults.og.image],
-      card: "summary_large_image",
-      creator: "@marc_louvion",
-    },
-
-    // If a canonical URL is given, we add it. The metadataBase will turn the relative URL into a fully qualified URL
-    ...(canonicalUrlRelative && {
-      alternates: { canonical: canonicalUrlRelative },
-    }),
-
-    // If you want to add extra tags, you can pass them here
-    ...extraTags,
-  };
-};
-
-// Strctured Data for Rich Results on Google. Learn more: https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data
-// Find your type here (SoftwareApp, Book...): https://developers.google.com/search/docs/appearance/structured-data/search-gallery
-// Use this tool to check data is well structure: https://search.google.com/test/rich-results
-// You don't have to use this component, but it increase your chances of having a rich snippet on Google.
-// I recommend this one below to your /page.js for software apps: It tells Google your AppName is a Software, and it has a rating of 4.8/5 from 12 reviews.
-// Fill the fields with your own data
-// See https://shipfa.st/docs/features/seo
-export const renderSchemaTags = () => {
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify({
-          "@context": "http://schema.org",
-          "@type": "SoftwareApplication",
-          name: config.appName,
-          description: config.appDescription,
-          image: `https://${config.domainName}/icon.png`,
-          url: `https://${config.domainName}/`,
-          author: {
-            "@type": "Person",
-            name: "Marc Lou",
-          },
-          datePublished: "2023-08-01",
-          applicationCategory: "EducationalApplication",
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: "4.8",
-            ratingCount: "12",
-          },
-          offers: [
-            {
-              "@type": "Offer",
-              price: "9.00",
-              priceCurrency: "USD",
-            },
-          ],
-        }),
-      }}
-    ></script>
-  );
-};
-
-```
-
-# libs/next-auth.js
-
-```js
-import GoogleProvider from "next-auth/providers/google";
-import EmailProvider from "next-auth/providers/email";
-import { MongoDBAdapter } from "@auth/mongodb-adapter";
-import config from "@/config";
-import connectMongo from "./mongo";
-
-export const authOptions = {
-  // Set any random key in .env.local
-  secret: process.env.NEXTAUTH_SECRET,
-  providers: [
-    GoogleProvider({
-      // Follow the "Login with Google" tutorial to get your credentials
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-      async profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.given_name ? profile.given_name : profile.name,
-          email: profile.email,
-          image: profile.picture,
-          createdAt: new Date(),
-        };
-      },
-    }),
-    // Follow the "Login with Email" tutorial to set up your email server
-    // Requires a MongoDB database. Set MONOGODB_URI env variable.
-    ...(connectMongo
-      ? [
-          EmailProvider({
-            server: process.env.EMAIL_SERVER,
-            from: config.mailgun.fromNoReply,
-          }),
-        ]
-      : []),
-  ],
-  // New users will be saved in Database (MongoDB Atlas). Each user (model) has some fields like name, email, image, etc..
-  // Requires a MongoDB database. Set MONOGODB_URI env variable.
-  // Learn more about the model type: https://next-auth.js.org/v3/adapters/models
-  ...(connectMongo && { adapter: MongoDBAdapter(connectMongo) }),
-
-  callbacks: {
-    session: async ({ session, token }) => {
-      if (session?.user) {
-        session.user.id = token.sub;
-      }
-      return session;
-    },
-  },
-  session: {
-    strategy: "jwt",
-  },
-  theme: {
-    brandColor: config.colors.main,
-    // Add you own logo below. Recommended size is rectangle (i.e. 200x50px) and show your logo + name.
-    // It will be used in the login flow to display your logo. If you don't add it, it will look faded.
-    logo: `/logoandName.png`,
-    // logo: `https://${config.domainName}/logoAndName.png`,
-  },
-};
-
-```
-
-# libs/mongoose.js
-
-```js
-import mongoose from "mongoose";
-import User from "@/models/User";
-
-const connectMongo = async () => {
-  if (!process.env.MONGODB_URI) {
-    throw new Error(
-      "Add the MONGODB_URI environment variable inside .env.local to use mongoose"
-    );
-  }
-  return mongoose
-    .connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
-    .catch((e) => console.error("Mongoose Client Error: " + e.message));
-};
-
-export default connectMongo;
-
-```
-
-# libs/mongo.js
-
-```js
-import { MongoClient } from "mongodb";
-
-// This lib is use just to connect to the database in next-auth.
-// We don't use it anywhere else in the API routes—we use mongoose.js instead (to be able to use models)
-// See /libs/nextauth.js file.
-
-const uri = process.env.MONGODB_URI;
-const options = {};
-
-let client;
-let clientPromise;
-
-if (!uri) {
-  console.group("⚠️ MONGODB_URI missing from .env");
-  console.error(
-    "It's not mandatory but a database is required for Magic Links."
-  );
-  console.error(
-    "If you don't need it, remove the code from /libs/next-auth.js (see connectMongo())"
-  );
-  console.groupEnd();
-} else if (process.env.NODE_ENV === "development") {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
-  }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
-}
-
-export default clientPromise;
-
-```
-
-# libs/mailgun.js
-
-```js
-import config from "@/config";
-const formData = require("form-data");
-const Mailgun = require("mailgun.js");
-const mailgun = new Mailgun(formData);
-
-const mg = mailgun.client({
-  username: "api",
-  key: process.env.MAILGUN_API_KEY || "dummy",
-});
-
-if (!process.env.MAILGUN_API_KEY && process.env.NODE_ENV === "development") {
-  console.group("⚠️ MAILGUN_API_KEY missing from .env");
-  console.error("It's not mandatory but it's required to send emails.");
-  console.error("If you don't need it, remove the code from /libs/mailgun.js");
-  console.groupEnd();
-}
-
-/**
- * Sends an email using the provided parameters.
- *
- * @async
- * @param {string} to - The recipient's email address.
- * @param {string} subject - The subject of the email.
- * @param {string} text - The plain text content of the email.
- * @param {string} html - The HTML content of the email.
- * @param {string} replyTo - The email address to set as the "Reply-To" address.
- * @returns {Promise} A Promise that resolves when the email is sent.
- */
-export const sendEmail = async ({ to, subject, text, html, replyTo }) => {
-  const data = {
-    from: config.mailgun.fromAdmin,
-    to: [to],
-    subject,
-    text,
-    html,
-    ...(replyTo && { "h:Reply-To": replyTo }),
-  };
-
-  await mg.messages.create(
-    (config.mailgun.subdomain ? `${config.mailgun.subdomain}.` : "") +
-      config.domainName,
-    data
-  );
-};
-
-```
-
-# libs/gpt.js
-
-```js
-import axios from "axios";
-
-// Use this if you want to make a call to OpenAI GPT-4 for instance. userId is used to identify the user on openAI side.
-export const sendOpenAi = async (messages, userId, max = 100, temp = 1) => {
-  const url = "https://api.openai.com/v1/chat/completions";
-
-  console.log("Ask GPT >>>");
-  messages.map((m) =>
-    console.log(" - " + m.role.toUpperCase() + ": " + m.content)
-  );
-
-  const body = JSON.stringify({
-    model: "gpt-4",
-    messages,
-    max_tokens: max,
-    temperature: temp,
-    user: userId,
-  });
-
-  const options = {
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-  };
-
-  try {
-    const res = await axios.post(url, body, options);
-
-    const answer = res.data.choices[0].message.content;
-    const usage = res?.data?.usage;
-
-    console.log(">>> " + answer);
-    console.log(
-      "TOKENS USED: " +
-        usage?.total_tokens +
-        " (prompt: " +
-        usage?.prompt_tokens +
-        " / response: " +
-        usage?.completion_tokens +
-        ")"
-    );
-    console.log("\n");
-
-    return answer;
-  } catch (e) {
-    console.error("GPT Error: " + e?.response?.status, e?.response?.data);
-    return null;
-  }
-};
-
-```
-
-# libs/api.js
-
-```js
-import axios from "axios";
-import { toast } from "react-hot-toast";
-import { signIn } from "next-auth/react";
-import config from "@/config";
-
-// use this to interact with our own API (/app/api folder) from the front-end side
-// See https://shipfa.st/docs/tutorials/api-call
-const apiClient = axios.create({
-  baseURL: "/api",
-});
-
-apiClient.interceptors.response.use(
-  function (response) {
-    return response.data;
-  },
-  function (error) {
-    let message = "";
-
-    if (error.response?.status === 401) {
-      // User not auth, ask to re login
-      toast.error("Please login");
-      // automatically redirect to /dashboard page after login
-      return signIn(undefined, { callbackUrl: config.auth.callbackUrl });
-    } else if (error.response?.status === 403) {
-      // User not authorized, must subscribe/purchase/pick a plan
-      message = "Pick a plan to use this feature";
-    } else {
-      message =
-        error?.response?.data?.error || error.message || error.toString();
-    }
-
-    error.message =
-      typeof message === "string" ? message : JSON.stringify(message);
-
-    console.error(error.message);
-
-    // Automatically display errors to the user
-    if (error.message) {
-      toast.error(error.message);
-    } else {
-      toast.error("something went wrong...");
-    }
-    return Promise.reject(error);
-  }
-);
-
-export default apiClient;
-
-```
+This is a binary file of the type: Image
 
 # components/WithWithout.js
 
@@ -2497,7 +2010,7 @@ const Hero = () => {
         <div className="w-full sm:w-auto">
           <ButtonCheckout mode = "subscription" priceId={defaultPriceId} 
           style="gradient" className="btn-wide">
-            Get {config.appName}
+            Enhance Your Writing
           </ButtonCheckout>
         </div>
 
@@ -4359,12 +3872,15 @@ const ButtonCheckout = ({ priceId, mode = "subscription", style = "default", cla
 
   const handlePayment = async () => {
     setIsLoading(true);
+    
+
 
     try {
+
       const res = await apiClient.post("/stripe/create-checkout", {
         priceId,
         mode,
-        successUrl: window.location.href,
+        successUrl:`${window.location.origin}/dashboard`,
         cancelUrl: window.location.href,
       });
 
@@ -4423,6 +3939,7 @@ import { useState } from "react";
 import { Popover, Transition } from "@headlessui/react";
 import { useSession, signOut } from "next-auth/react";
 import apiClient from "@/libs/api";
+import config from "@/config";
 
 // A button to show user some account actions
 //  1. Billing: open a Stripe Customer Portal to manage their billing (cancel subscription, update payment method, etc.).
@@ -4439,6 +3956,9 @@ const ButtonAccount = () => {
   };
   const handleBilling = async () => {
     setIsLoading(true);
+
+    const url = config.stripe.stripeBilling.url
+
 
     try {
       const { url } = await apiClient.post("/stripe/create-portal", {
@@ -4581,6 +4101,501 @@ const BetterIcon = ({ children }) => {
 };
 
 export default BetterIcon;
+
+```
+
+# libs/stripe.js
+
+```js
+import Stripe from "stripe";
+
+// This is used to create a Stripe Checkout for one-time payments. It's usually triggered with the <ButtonCheckout /> component. Webhooks are used to update the user's state in the database.
+export const createCheckout = async ({
+  priceId,
+  mode,
+  successUrl,
+  cancelUrl,
+  couponId,
+  clientReferenceId,
+  user,
+}) => {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+  const extraParams = {};
+
+  if (user?.customerId) {
+    extraParams.customer = user.customerId;
+  } else {
+    if (mode === "payment") {
+      extraParams.customer_creation = "always";
+      // The option below costs 0.4% (up to $2) per invoice. Alternatively, you can use https://zenvoice.io/ to create unlimited invoices automatically.
+      // extraParams.invoice_creation = { enabled: true };
+      extraParams.payment_intent_data = { setup_future_usage: "on_session" };
+    }
+    if (user?.email) {
+      extraParams.customer_email = user.email;
+    }
+    extraParams.tax_id_collection = { enabled: true };
+  }
+
+  const stripeSession = await stripe.checkout.sessions.create({
+    mode,
+    allow_promotion_codes: true,
+    client_reference_id: clientReferenceId,
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+      },
+    ],
+    discounts: couponId
+      ? [
+          {
+            coupon: couponId,
+          },
+        ]
+      : [],
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    ...extraParams,
+  });
+
+  return stripeSession.url;
+};
+
+// This is used to create Customer Portal sessions, so users can manage their subscriptions (payment methods, cancel, etc..)
+export const createCustomerPortal = async ({ customerId, returnUrl }) => {
+  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl,
+    });
+
+    return portalSession.url;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+};
+
+// This is used to get the uesr checkout session and populate the data so we get the planId the user subscribed to
+export const findCheckoutSession = async (sessionId) => {
+  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["line_items"],
+    });
+
+    return session;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+};
+
+```
+
+# libs/seo.js
+
+```js
+import config from "@/config";
+
+// These are all the SEO tags you can add to your pages.
+// It prefills data with default title/description/OG, etc.. and you can cusotmize it for each page.
+// It's already added in the root layout.js so you don't have to add it to every pages
+// But I recommend to set the canonical URL for each page (export const metadata = getSEOTags({canonicalUrlRelative: "/"});)
+// See https://shipfa.st/docs/features/seo
+export const getSEOTags = ({
+  title,
+  description,
+  keywords,
+  openGraph,
+  canonicalUrlRelative,
+  extraTags,
+} = {}) => {
+  return {
+    // up to 50 characters (what does your app do for the user?) > your main should be here
+    title: title || config.appName,
+    // up to 160 characters (how does your app help the user?)
+    description: description || config.appDescription,
+    // some keywords separated by commas. by default it will be your app name
+    keywords: keywords || [config.appName],
+    applicationName: config.appName,
+    // set a base URL prefix for other fields that require a fully qualified URL (.e.g og:image: og:image: 'https://yourdomain.com/share.png' => '/share.png')
+    metadataBase: new URL(
+      process.env.NODE_ENV === "development"
+        ? "http://localhost:3000/"
+        : `https://${config.domainName}/`
+    ),
+
+    openGraph: {
+      title: openGraph?.title || config.appName,
+      description: openGraph?.description || config.appDescription,
+      url: openGraph?.url || `https://${config.domainName}/`,
+      siteName: openGraph?.title || config.appName,
+      // If you add an opengraph-image.(jpg|jpeg|png|gif) image to the /app folder, you don't need the code below
+      // images: [
+      //   {
+      //     url: `https://${config.domainName}/share.png`,
+      //     width: 1200,
+      //     height: 660,
+      //   },
+      // ],
+      locale: "en_US",
+      type: "website",
+    },
+
+    twitter: {
+      title: openGraph?.title || config.appName,
+      description: openGraph?.description || config.appDescription,
+      // If you add an twitter-image.(jpg|jpeg|png|gif) image to the /app folder, you don't need the code below
+      // images: [openGraph?.image || defaults.og.image],
+      card: "summary_large_image",
+      creator: "@marc_louvion",
+    },
+
+    // If a canonical URL is given, we add it. The metadataBase will turn the relative URL into a fully qualified URL
+    ...(canonicalUrlRelative && {
+      alternates: { canonical: canonicalUrlRelative },
+    }),
+
+    // If you want to add extra tags, you can pass them here
+    ...extraTags,
+  };
+};
+
+// Strctured Data for Rich Results on Google. Learn more: https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data
+// Find your type here (SoftwareApp, Book...): https://developers.google.com/search/docs/appearance/structured-data/search-gallery
+// Use this tool to check data is well structure: https://search.google.com/test/rich-results
+// You don't have to use this component, but it increase your chances of having a rich snippet on Google.
+// I recommend this one below to your /page.js for software apps: It tells Google your AppName is a Software, and it has a rating of 4.8/5 from 12 reviews.
+// Fill the fields with your own data
+// See https://shipfa.st/docs/features/seo
+export const renderSchemaTags = () => {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "http://schema.org",
+          "@type": "SoftwareApplication",
+          name: config.appName,
+          description: config.appDescription,
+          image: `https://${config.domainName}/icon.png`,
+          url: `https://${config.domainName}/`,
+          author: {
+            "@type": "Person",
+            name: "Marc Lou",
+          },
+          datePublished: "2023-08-01",
+          applicationCategory: "EducationalApplication",
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            ratingCount: "12",
+          },
+          offers: [
+            {
+              "@type": "Offer",
+              price: "9.00",
+              priceCurrency: "USD",
+            },
+          ],
+        }),
+      }}
+    ></script>
+  );
+};
+
+```
+
+# libs/next-auth.js
+
+```js
+import GoogleProvider from "next-auth/providers/google";
+import EmailProvider from "next-auth/providers/email";
+import { MongoDBAdapter } from "@auth/mongodb-adapter";
+import config from "@/config";
+import connectMongo from "./mongo";
+
+export const authOptions = {
+  // Set any random key in .env.local
+  secret: process.env.NEXTAUTH_SECRET,
+  providers: [
+    GoogleProvider({
+      // Follow the "Login with Google" tutorial to get your credentials
+      clientId: process.env.GOOGLE_ID,
+      clientSecret: process.env.GOOGLE_SECRET,
+      async profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.given_name ? profile.given_name : profile.name,
+          email: profile.email,
+          image: profile.picture,
+          createdAt: new Date(),
+        };
+      },
+    }),
+    // Follow the "Login with Email" tutorial to set up your email server
+    // Requires a MongoDB database. Set MONOGODB_URI env variable.
+    ...(connectMongo
+      ? [
+          EmailProvider({
+            server: process.env.EMAIL_SERVER,
+            from: config.mailgun.fromNoReply,
+          }),
+        ]
+      : []),
+  ],
+  // New users will be saved in Database (MongoDB Atlas). Each user (model) has some fields like name, email, image, etc..
+  // Requires a MongoDB database. Set MONOGODB_URI env variable.
+  // Learn more about the model type: https://next-auth.js.org/v3/adapters/models
+  ...(connectMongo && { adapter: MongoDBAdapter(connectMongo) }),
+
+  callbacks: {
+    session: async ({ session, token }) => {
+      if (session?.user) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
+  },
+  session: {
+    strategy: "jwt",
+  },
+  theme: {
+    brandColor: config.colors.main,
+    // Add you own logo below. Recommended size is rectangle (i.e. 200x50px) and show your logo + name.
+    // It will be used in the login flow to display your logo. If you don't add it, it will look faded.
+    logo: `/logoandName.png`,
+    // logo: `https://${config.domainName}/logoAndName.png`,
+  },
+};
+
+```
+
+# libs/mongoose.js
+
+```js
+import mongoose from "mongoose";
+import User from "@/models/User";
+
+const connectMongo = async () => {
+  if (!process.env.MONGODB_URI) {
+    throw new Error(
+      "Add the MONGODB_URI environment variable inside .env.local to use mongoose"
+    );
+  }
+  return mongoose
+    .connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    })
+    .catch((e) => console.error("Mongoose Client Error: " + e.message));
+};
+
+export default connectMongo;
+
+```
+
+# libs/mongo.js
+
+```js
+import { MongoClient } from "mongodb";
+
+// This lib is use just to connect to the database in next-auth.
+// We don't use it anywhere else in the API routes—we use mongoose.js instead (to be able to use models)
+// See /libs/nextauth.js file.
+
+const uri = process.env.MONGODB_URI;
+const options = {};
+
+let client;
+let clientPromise;
+
+if (!uri) {
+  console.group("⚠️ MONGODB_URI missing from .env");
+  console.error(
+    "It's not mandatory but a database is required for Magic Links."
+  );
+  console.error(
+    "If you don't need it, remove the code from /libs/next-auth.js (see connectMongo())"
+  );
+  console.groupEnd();
+} else if (process.env.NODE_ENV === "development") {
+  if (!global._mongoClientPromise) {
+    client = new MongoClient(uri, options);
+    global._mongoClientPromise = client.connect();
+  }
+  clientPromise = global._mongoClientPromise;
+} else {
+  client = new MongoClient(uri, options);
+  clientPromise = client.connect();
+}
+
+export default clientPromise;
+
+```
+
+# libs/mailgun.js
+
+```js
+import config from "@/config";
+const formData = require("form-data");
+const Mailgun = require("mailgun.js");
+const mailgun = new Mailgun(formData);
+
+const mg = mailgun.client({
+  username: "api",
+  key: process.env.MAILGUN_API_KEY || "dummy",
+});
+
+if (!process.env.MAILGUN_API_KEY && process.env.NODE_ENV === "development") {
+  console.group("⚠️ MAILGUN_API_KEY missing from .env");
+  console.error("It's not mandatory but it's required to send emails.");
+  console.error("If you don't need it, remove the code from /libs/mailgun.js");
+  console.groupEnd();
+}
+
+/**
+ * Sends an email using the provided parameters.
+ *
+ * @async
+ * @param {string} to - The recipient's email address.
+ * @param {string} subject - The subject of the email.
+ * @param {string} text - The plain text content of the email.
+ * @param {string} html - The HTML content of the email.
+ * @param {string} replyTo - The email address to set as the "Reply-To" address.
+ * @returns {Promise} A Promise that resolves when the email is sent.
+ */
+export const sendEmail = async ({ to, subject, text, html, replyTo }) => {
+  const data = {
+    from: config.mailgun.fromAdmin,
+    to: [to],
+    subject,
+    text,
+    html,
+    ...(replyTo && { "h:Reply-To": replyTo }),
+  };
+
+  await mg.messages.create(
+    (config.mailgun.subdomain ? `${config.mailgun.subdomain}.` : "") +
+      config.domainName,
+    data
+  );
+};
+
+```
+
+# libs/gpt.js
+
+```js
+import axios from "axios";
+
+// Use this if you want to make a call to OpenAI GPT-4 for instance. userId is used to identify the user on openAI side.
+export const sendOpenAi = async (messages, userId, max = 100, temp = 1) => {
+  const url = "https://api.openai.com/v1/chat/completions";
+
+  console.log("Ask GPT >>>");
+  messages.map((m) =>
+    console.log(" - " + m.role.toUpperCase() + ": " + m.content)
+  );
+
+  const body = JSON.stringify({
+    model: "gpt-4",
+    messages,
+    max_tokens: max,
+    temperature: temp,
+    user: userId,
+  });
+
+  const options = {
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+  };
+
+  try {
+    const res = await axios.post(url, body, options);
+
+    const answer = res.data.choices[0].message.content;
+    const usage = res?.data?.usage;
+
+    console.log(">>> " + answer);
+    console.log(
+      "TOKENS USED: " +
+        usage?.total_tokens +
+        " (prompt: " +
+        usage?.prompt_tokens +
+        " / response: " +
+        usage?.completion_tokens +
+        ")"
+    );
+    console.log("\n");
+
+    return answer;
+  } catch (e) {
+    console.error("GPT Error: " + e?.response?.status, e?.response?.data);
+    return null;
+  }
+};
+
+```
+
+# libs/api.js
+
+```js
+import axios from "axios";
+import { toast } from "react-hot-toast";
+import { signIn } from "next-auth/react";
+import config from "@/config";
+
+// use this to interact with our own API (/app/api folder) from the front-end side
+// See https://shipfa.st/docs/tutorials/api-call
+const apiClient = axios.create({
+  baseURL: "/api",
+});
+
+apiClient.interceptors.response.use(
+  function (response) {
+    return response.data;
+  },
+  function (error) {
+    let message = "";
+
+    if (error.response?.status === 401) {
+      // User not auth, ask to re login
+      toast.error("Please login");
+      // automatically redirect to /dashboard page after login
+      return signIn(undefined, { callbackUrl: config.auth.callbackUrl });
+    } else if (error.response?.status === 403) {
+      // User not authorized, must subscribe/purchase/pick a plan
+      message = "Pick a plan to use this feature";
+    } else {
+      message =
+        error?.response?.data?.error || error.message || error.toString();
+    }
+
+    error.message =
+      typeof message === "string" ? message : JSON.stringify(message);
+
+    console.error(error.message);
+
+    // Automatically display errors to the user
+    if (error.message) {
+      toast.error(error.message);
+    } else {
+      toast.error("something went wrong...");
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default apiClient;
 
 ```
 
@@ -5186,6 +5201,214 @@ export default TOS;
 
 ```
 
+# app/privacy-policy/page.js
+
+```js
+import Link from "next/link";
+import { getSEOTags } from "@/libs/seo";
+import config from "@/config";
+
+// CHATGPT PROMPT TO GENERATE YOUR PRIVACY POLICY — replace with your own data 👇
+
+// 1. Go to https://chat.openai.com/
+// 2. Copy paste bellow
+// 3. Replace the data with your own (if needed)
+// 4. Paste the answer from ChatGPT directly in the <pre> tag below
+
+// You are an excellent lawyer.
+
+// I need your help to write a simple privacy policy for my website. Here is some context:
+// - Website: https://shipfa.st
+// - Name: ShipFast
+// - Description: A JavaScript code boilerplate to help entrepreneurs launch their startups faster
+// - User data collected: name, email and payment information
+// - Non-personal data collection: web cookies
+// - Purpose of Data Collection: Order processing
+// - Data sharing: we do not share the data with any other parties
+// - Children's Privacy: we do not collect any data from children
+// - Updates to the Privacy Policy: users will be updated by email
+// - Contact information: marc@shipfa.st
+
+// Please write a simple privacy policy for my site. Add the current date.  Do not add or explain your reasoning. Answer:
+
+export const metadata = getSEOTags({
+  title: `Privacy Policy | ${config.appName}`,
+  canonicalUrlRelative: "/privacy-policy",
+});
+
+const PrivacyPolicy = () => {
+  return (
+    <main className="max-w-xl mx-auto">
+      <div className="p-5">
+        <Link href="/" className="btn btn-ghost">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-5 h-5"
+          >
+            <path
+              fillRule="evenodd"
+              d="M15 10a.75.75 0 01-.75.75H7.612l2.158 1.96a.75.75 0 11-1.04 1.08l-3.5-3.25a.75.75 0 010-1.08l3.5-3.25a.75.75 0 111.04 1.08L7.612 9.25h6.638A.75.75 0 0115 10z"
+              clipRule="evenodd"
+            />
+          </svg>{" "}
+          Back
+        </Link>
+        <h1 className="text-3xl font-extrabold pb-6">
+          Privacy Policy for {config.appName}
+        </h1>
+
+        <pre
+          className="leading-relaxed whitespace-pre-wrap"
+          style={{ fontFamily: "sans-serif" }}
+        >
+          {`Effective Date: July 16, 2024
+
+Thank you for visiting Writinggroup.ai ("we," "us," or "our"). This Privacy Policy outlines how we collect, use, and protect your personal and non-personal information when you use our website located at https://jhadruk.com (the "Website").
+
+By accessing or using the Website, you agree to the terms of this Privacy Policy. If you do not agree with the practices described in this policy, please do not use the Website.
+
+1. Information We Collect
+
+1.1 Personal Data
+
+We collect the following personal information from you:
+
+Name: We collect your name to personalize your experience and communicate with you effectively.
+Email: We collect your email address to send you important information regarding your orders, updates, and communication.
+Payment Information: We collect payment details to process your orders securely.
+1.2 Non-Personal Data
+
+We may use web cookies and similar technologies to collect non-personal information such as your IP address, browser type, device information, and browsing patterns. This information helps us to enhance your browsing experience, analyze trends, and improve our services.
+
+2. Purpose of Data Collection
+
+We collect and use your personal data for the sole purpose of order processing. This includes processing your orders, sending order confirmations, providing customer support, and keeping you updated about the status of your orders.
+
+3. Data Sharing
+
+We do not share your personal data with any third parties.
+
+4. Children's Privacy
+
+Writinggroup.ai is not intended for children under the age of 13. We do not knowingly collect personal information from children. If you are a parent or guardian and believe that your child has provided us with personal information, please contact us at the email address provided below.
+
+5. Updates to the Privacy Policy
+
+We may update this Privacy Policy from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons. Any updates will be posted on this page, and we may notify you via email about significant changes.
+
+6. Contact Information
+
+If you have any questions, concerns, or requests related to this Privacy Policy, you can contact us at:
+
+Email: temunix@wgroup.jhadruk.com
+
+By using Writinggroup.ai, you consent to the terms of this Privacy Policy.`}
+        </pre>
+      </div>
+    </main>
+  );
+};
+
+export default PrivacyPolicy;
+
+```
+
+# app/dashboard/page.js
+
+```js
+import Header from "@/components/Header";
+import ButtonAccount from "@/components/ButtonAccount";
+import ButtonGradient from "@/components/ButtonGradient";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/next-auth";
+import connectMongo from "@/libs/mongoose";
+import User from "@/models/User";
+import Link from "next/link";
+import config from "@/config";
+
+export const dynamic = "force-dynamic";
+
+export default async function Dashboard() {
+  await connectMongo();
+  const session = await getServerSession(authOptions);
+  const user = session ? await User.findById(session.user.id) : null;
+
+  const hasPaid = user && user.customerId;
+  const buttonLink = hasPaid ? "/persona-chat" : "/#pricing";
+  const buttonTitle = hasPaid ? "Go to your Writing Group AI" : "Upgrade to Premium";
+
+  return (
+    <>
+      <Header />
+      <main className="min-h-screen p-8 pb-24">
+        <section className="max-w-xl mx-auto space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 className="text-3xl md:text-4xl font-extrabold">
+              User Dashboard
+            </h1>
+            <ButtonAccount />
+          </div>
+          <div className="bg-white shadow-md rounded-lg p-6 space-y-6">
+            <div>
+              <p className="text-xl font-semibold">Welcome, {user?.name} 👋</p>
+              <p className="mt-2">Thank you for joining us! We encourage you to explore the experience.</p>
+            </div>
+            <div className="border-t pt-4">
+              <h2 className="text-lg font-semibold mb-2">Account Management</h2>
+              <p className="text-sm text-gray-600 mb-2">
+                To manage your subscription and billing details, click the button in the top right next to User Dashboard.
+              </p>
+            </div>
+            <div className="border-t pt-4">
+              <h2 className="text-lg font-semibold mb-2">Quick Actions</h2>
+              <div className="space-y-4">
+                <Link href={buttonLink} passHref>
+                  <ButtonGradient title={buttonTitle} />
+                </Link>
+              </div>
+            </div>
+            {!hasPaid && (
+              <div className="border-t pt-4">
+                <p className="text-sm text-gray-600">
+                  Upgrade to premium to access all features, including the Writing Group AI.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
+    </>
+  );
+}
+```
+
+# app/dashboard/layout.js
+
+```js
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/next-auth";
+import config from "@/config";
+
+// This is a server-side component to ensure the user is logged in.
+// If not, it will redirect to the login page.
+// It's applied to all subpages of /dashboard in /app/dashboard/*** pages
+// You can also add custom static UI elements like a Navbar, Sidebar, Footer, etc..
+// See https://shipfa.st/docs/tutorials/private-page
+export default async function LayoutPrivate({ children }) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect(config.auth.loginUrl);
+  }
+
+  return <>{children}</>;
+}
+
+```
+
 # app/persona-chat/writingPersonas.js
 
 ```js
@@ -5489,6 +5712,64 @@ export const writingLevelPrompts = {
 # app/persona-chat/page.js
 
 ```js
+import PersonaChatClient from "./PersonaChatClient";
+
+export default function PersonaChatPage() {
+  return <PersonaChatClient />;
+}
+```
+
+# app/persona-chat/layout.js
+
+```js
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/libs/next-auth";
+import connectMongo from "@/libs/mongoose";
+import User from "@/models/User";
+import config from "@/config";
+import PersonaChatClient from "./PersonaChatClient";
+
+export default async function PersonaChatLayout({ children }) {
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+        redirect(config.auth.loginUrl);
+      }
+  
+    await connectMongo();
+    const user = await User.findById(session.user.id);
+    const hasPaid = !!(user && user.customerId);
+
+      // Log server-side information
+  console.log('Server-side user data:', {
+    userId: user?._id,
+    customerId: user?.customerId,
+    hasPaid: hasPaid
+  });
+
+  const debugInfo = {
+    userId: user?._id?.toString(),
+    customerId: user?.customerId,
+    hasPaid: hasPaid
+  };
+  
+    return (
+      <>
+        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.initialHasPaid = ${JSON.stringify(hasPaid)};`,
+          }}
+        />
+      </>
+    );
+  }
+```
+
+# app/persona-chat/PersonaChatClient.js
+
+```js
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5503,412 +5784,296 @@ import config from '@/config';
 
 // Add brief descriptions for each persona
 const personaDescriptions = {
-  motivator: "An enthusiastic cheerleader who keeps writers inspired and moving forward.",
-  critic: "An analytical mind who provides constructive feedback to elevate your writing.",
-  innovator: "A creative thinker who pushes boundaries and sparks unique ideas.",
-  mentor: "An experienced sage who shares wisdom from years in the writing world.",
-  editor: "A sharp-eyed professional who refines and polishes written work to perfection.",
-  research: "A dedicated expert providing factual, research-based input to enhance the authenticity and depth of speculative fiction.",
-};
-
-const writerLevels = ['Beginner', 'Intermediate', 'Advanced'];
-
-export default function PersonaChatPage() {
-  const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [selectedPersona, setSelectedPersona] = useState(writingPersonas[0]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { data: session, status } = useSession();
-  const [writerLevel, setWriterLevel] = useState('Intermediate');
-  const router = useRouter();
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/api/auth/signin');
-    }
-    // Set the theme for this page
-    document.documentElement.setAttribute('data-theme', config.colors.personaChatTheme);
-    
-    // Add initial mentor message
-    const mentorPersona = writingPersonas.find(persona => persona.id === 'mentor');
-    if (mentorPersona && messages.length === 0) {
-      setMessages([{
-        role: 'persona',
-        content: `# Welcome, aspiring wordsmith! 🖋️✨
-
-I&apos;m the Mentor, and I&apos;m thrilled to introduce you to your new writing companions.
-
-Ready to elevate your writing? Here&apos;s how to dive in:  
-**1.** **Choose Your Guide** 👥
-   On the right, you&apos;ll find a colorful cast of writing personas. Each brings a unique perspective to your work. Feel free to switch between them &ndash; variety is the spice of writing!
-
-**2.** **Set Your Level** 📊
-   Are you just starting out, or are you refining your craft? Select your writing level to receive tailored advice that meets you where you are.
-
-**3.** **Share Your Words** 📝
-   Type your writing sample in the chat box below. Don&apos;t be shy &ndash; every great author started with a first draft!
-
-**4.** **Engage and Explore** 💬
-   Chat with the personas, ask questions, and watch your writing transform. Remember, each persona offers a different flavor of feedback.
-
-Whether you&apos;re crafting the next bestseller, penning poetry, or polishing your prose, we&apos;re here to help you shine. So, which writing adventure shall we embark on today?  
-
-**Go ahead, select a persona and let&apos;s bring your words to life!**`,
-        personaName: mentorPersona.name,
-        personaEmoji: mentorPersona.emoji
-      }]);
-    }
-    // Cleanup function to reset the theme when leaving the page
-    return () => {
-      document.documentElement.setAttribute('data-theme', config.colors.theme);
-    };
-  }, [status, router, messages]);
-
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    if (!inputMessage.trim()) return;
-
-    const newMessage = { role: 'user', content: inputMessage };
-    setMessages(prev => [...prev, newMessage]);
-    setInputMessage('');
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/persona', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: session?.user?.id,
-          message: inputMessage,
-          persona: selectedPersona.id,
-          prompt: selectedPersona.prompt,
-          writerLevel: writerLevel
-        }),
-      });
-      const data = await response.json();
-      setMessages(prev => [...prev, { 
-        role: 'persona', 
-        content: data.response, 
-        personaName: selectedPersona.name,
-        personaEmoji: selectedPersona.emoji
-      }]);
-    } catch (error) {
-      console.error('Error:', error);
-      setMessages(prev => [...prev, { 
-        role: 'persona', 
-        content: 'Sorry, an error occurred.',
-        personaName: selectedPersona.name,
-        personaEmoji: selectedPersona.emoji
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
+    motivator: "An enthusiastic cheerleader who keeps writers inspired and moving forward.",
+    critic: "An analytical mind who provides constructive feedback to elevate your writing.",
+    innovator: "A creative thinker who pushes boundaries and sparks unique ideas.",
+    mentor: "An experienced sage who shares wisdom from years in the writing world.",
+    editor: "A sharp-eyed professional who refines and polishes written work to perfection.",
+    research: "A dedicated expert providing factual, research-based input to enhance the authenticity and depth of speculative fiction.",
   };
+  
+  const writerLevels = ['Beginner', 'Intermediate', 'Advanced'];
 
-  if (status === 'loading') return <div>Loading...</div>;
-  if (status === 'unauthenticated') return null;
+  export default function PersonaChatClient() {
+    const [messages, setMessages] = useState([]);
+    const [inputMessage, setInputMessage] = useState('');
+    const [selectedPersona, setSelectedPersona] = useState(writingPersonas[0]);
+    const [isLoading, setIsLoading] = useState(false);
+    const { data: session, status } = useSession();
+    const [writerLevel, setWriterLevel] = useState('Intermediate');
+    const router = useRouter();
+    const [hasPaid, setHasPaid] = useState(false);
+    const [isPaymentLoaded, setIsPaymentLoaded] = useState(false);
+    const [debugInfo, setDebugInfo] = useState(null);
 
-  return (
-    <LayoutClient>
-      <Header />
-      <div className="max-w-6xl mx-auto p-4 bg-base-100">
-        <h1 className="text-3xl font-bold text-primary mb-4">{personaTerms.plural} Chat </h1>
-        <div className="flex">
-          {/* Chat Section */}
-          <div className="flex-grow mr-4">
-            <div className="bg-base-200 shadow-lg rounded-lg p-4 h-[70vh] overflow-y-auto space-y-4">
-              {messages.map((msg, index) => (
-                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[70%] p-3 rounded-lg ${
-                    msg.role === 'user' 
-                      ? 'bg-neutral text-neutral-content' 
-                      : 'bg-base-300 text-base-content'
-                  }`}>
-                    {msg.role === 'persona' && (
-                      <div className="font-bold mb-1">
-                        {msg.personaEmoji} {msg.personaName}
+    const MAX_WORDS = 50000;
+  
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+          const initialHasPaid = window.initialHasPaid;
+          setHasPaid(initialHasPaid);
+          setIsPaymentLoaded(true);
+          setDebugInfo(window.debugInfo);
+    
+          console.log('Initial hasPaid value:', initialHasPaid);
+          console.log('Debug info:', window.debugInfo);
+        }
+
+      // Set the theme for this page
+      document.documentElement.setAttribute('data-theme', config.colors.personaChatTheme);
+      
+      // Add initial mentor message
+      const mentorPersona = writingPersonas.find(persona => persona.id === 'mentor');
+      if (mentorPersona && messages.length === 0) {
+        setMessages([{
+          role: 'persona',
+          content: `# Welcome, aspiring wordsmith! 🖋️✨
+  
+  I'm the Mentor, and I'm thrilled to introduce you to your new writing companions.
+  
+  Ready to elevate your writing? Here's how to dive in:  
+  **1.** **Choose Your Guide** 👥
+     On the right, you'll find a colorful cast of writing personas. Each brings a unique perspective to your work. Feel free to switch between them – variety is the spice of writing!
+  
+  **2.** **Set Your Level** 📊
+     Are you just starting out, or are you refining your craft? Select your writing level to receive tailored advice that meets you where you are.
+  
+  **3.** **Share Your Words** 📝
+     Type your writing sample in the chat box below. Don't be shy – every great author started with a first draft!
+  
+  **4.** **Engage and Explore** 💬
+     Chat with the personas, ask questions, and watch your writing transform. Remember, each persona offers a different flavor of feedback.
+  
+  Whether you're crafting the next bestseller, penning poetry, or polishing your prose, we're here to help you shine. So, which writing adventure shall we embark on today?  
+  
+  **Go ahead, select a persona and let's bring your words to life!**`,
+          personaName: mentorPersona.name,
+          personaEmoji: mentorPersona.emoji
+        }]);
+      }
+      
+      // Cleanup function to reset the theme when leaving the page
+      return () => {
+        document.documentElement.setAttribute('data-theme', config.colors.theme);
+      };
+    }, [messages]);
+
+    console.log('Current hasPaid state:', hasPaid);
+  
+    const countWords = (str) => {
+      return str.trim().split(/\s+/).length;
+    };
+  
+    const sendMessage = async (e) => {
+      e.preventDefault();
+      if (!inputMessage.trim()) return;
+  
+      if (!hasPaid) {
+        setMessages(prev => [...prev, {
+          role: 'system',
+          content: 'You need to upgrade to a paid account to use this feature. Please visit the pricing page to upgrade.',
+        }]);
+        return;
+      }
+  
+      const wordCount = countWords(inputMessage);
+  
+      if (wordCount > MAX_WORDS) {
+        setMessages(prev => [...prev, {
+          role: 'system',
+          content: `Your message exceeds the maximum word limit of your account. Please shorten your message.`,
+        }]);
+        setInputMessage('');
+        return;
+      }
+  
+      const newMessage = { role: 'user', content: inputMessage };
+      setMessages(prev => [...prev, newMessage]);
+      setInputMessage('');
+      setIsLoading(true);
+  
+      try {
+        const response = await fetch('/api/persona', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: session?.user?.id,
+            message: inputMessage,
+            persona: selectedPersona.id,
+            prompt: selectedPersona.prompt,
+            writerLevel: writerLevel
+          }),
+        });
+        const data = await response.json();
+        setMessages(prev => [...prev, { 
+          role: 'persona', 
+          content: data.response, 
+          personaName: selectedPersona.name,
+          personaEmoji: selectedPersona.emoji
+        }]);
+      } catch (error) {
+        console.error('Error:', error);
+        setMessages(prev => [...prev, { 
+          role: 'persona', 
+          content: 'Sorry, an error occurred.',
+          personaName: selectedPersona.name,
+          personaEmoji: selectedPersona.emoji
+        }]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (!isPaymentLoaded) {
+        return (
+          <LayoutClient>
+            <Header />
+            <div className="max-w-6xl mx-auto p-4 bg-base-100">
+              <h1 className="text-3xl font-bold text-primary mb-4">{personaTerms.plural} Chat</h1>
+              <div className="flex justify-center items-center h-[50vh]">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+              </div>
+            </div>
+            <Footer />
+          </LayoutClient>
+        );
+      }
+
+    return (
+        <LayoutClient>
+          <Header />
+          <div className="max-w-6xl mx-auto p-4 bg-base-100">
+            <h1 className="text-3xl font-bold text-primary mb-4">{personaTerms.plural} Chat </h1>
+
+            {/* Debug Information */}
+        {process.env.NODE_ENV === 'development' && debugInfo && (
+          <div className="bg-info text-info-content p-4 rounded-lg mb-4">
+            <h2 className="text-xl font-bold mb-2">Debug Information</h2>
+            <p>User ID: {debugInfo.userId}</p>
+            <p>Customer ID: {debugInfo.customerId}</p>
+            <p>Has Paid: {debugInfo.hasPaid ? 'Yes' : 'No'}</p>
+            <p>Current hasPaid state: {hasPaid ? 'Yes' : 'No'}</p>
+          </div>
+        )}
+            
+            {!hasPaid ? (
+              <div className="bg-warning text-warning-content p-4 rounded-lg mb-4">
+                <p>You need to upgrade to a paid account to use this feature.</p>
+                <button 
+                  onClick={() => router.push('/#pricing')} 
+                  className="btn btn-primary mt-2"
+                >
+                  Upgrade Now
+                </button>
+              </div>
+            ) : (
+            <div className="flex">
+              {/* Chat Section */}
+              <div className="flex-grow mr-4">
+                <div className="bg-base-200 shadow-lg rounded-lg p-4 h-[70vh] overflow-y-auto space-y-4">
+                  {messages.map((msg, index) => (
+                    <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[70%] p-3 rounded-lg ${
+                        msg.role === 'user' 
+                          ? 'bg-neutral text-neutral-content' 
+                          : 'bg-base-300 text-base-content'
+                      }`}>
+                        {msg.role === 'persona' && (
+                          <div className="font-bold mb-1">
+                            {msg.personaEmoji} {msg.personaName}
+                          </div>
+                        )}
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => <p className="whitespace-pre-wrap">{children}</p>,
+                          }}
+                          className="prose max-w-none break-words"
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
                       </div>
-                    )}
-                    <ReactMarkdown
-                      components={{
-                        p: ({ children }) => <p className="whitespace-pre-wrap">{children}</p>,
-                      }}
-                      className="prose max-w-none break-words"
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
+                    </div>
+                  ))}
+                  {isLoading && (
+                    <div className="flex justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  )}
+                </div>
+                <form onSubmit={sendMessage} className="flex space-x-2 mt-4">
+                  <input
+                    type="text"
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    className="flex-grow p-2 input input-bordered input-primary"
+                    placeholder="Type your message..."
+                  />
+                  <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                    {isLoading ? 'Sending...' : 'Send'}
+                  </button>
+                </form>
+              </div>
+    
+              {/* Persona Selection and Writer's Level Section */}
+              <div className="w-64 flex-shrink-0 space-y-4">
+                
+    
+                {/* Current Persona Display */}
+                <div className="p-4 bg-base-200 text-base-content rounded-lg shadow-md">
+                  <div className="font-bold text-lg mb-2">Current {personaTerms.singular}</div>
+                  <div className="mt-2 p-2 bg-base-100 rounded flex items-center">
+                    <span className="text-2xl mr-2">{selectedPersona.emoji}</span>
+                    <span className="font-bold">{selectedPersona.name}</span>
+                  </div>
+                  <div className="mt-2 text-sm">
+                    {personaDescriptions[selectedPersona.id]}
                   </div>
                 </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    
+                <div className="bg-base-200 rounded-lg shadow-md flex-grow flex flex-col">
+                  <h2 className="text-lg font-semibold p-3 bg-base-300 rounded-t-lg">
+                    Select a {personaTerms.singular}
+                  </h2>
+                  <div className="overflow-y-auto p-2 flex-grow">
+                    {writingPersonas.map(persona => (
+                      <button
+                        key={persona.id}
+                        onClick={() => setSelectedPersona(persona)}
+                        className={`w-full px-4 py-2 rounded text-left mb-2 transition-colors duration-200 flex items-center ${
+                          selectedPersona.id === persona.id
+                            ? 'bg-primary text-primary-content shadow-md'
+                            : 'bg-base-100 hover:bg-base-300'
+                        }`}
+                      >
+                        <span className="text-xl mr-2">{persona.emoji}</span>
+                        <span className="text-sm">{persona.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
-            </div>
-            <form onSubmit={sendMessage} className="flex space-x-2 mt-4">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                className="flex-grow p-2 input input-bordered input-primary"
-                placeholder="Type your message..."
-              />
-              <button type="submit" className="btn btn-primary" disabled={isLoading}>
-                {isLoading ? 'Sending...' : 'Send'}
-              </button>
-            </form>
-          </div>
-
-          {/* Persona Selection and Writer's Level Section */}
-          <div className="w-64 flex-shrink-0 space-y-4">
-            
-
-            {/* Current Persona Display */}
-            <div className="p-4 bg-base-200 text-base-content rounded-lg shadow-md">
-              <div className="font-bold text-lg mb-2">Current {personaTerms.singular}</div>
-              <div className="mt-2 p-2 bg-base-100 rounded flex items-center">
-                <span className="text-2xl mr-2">{selectedPersona.emoji}</span>
-                <span className="font-bold">{selectedPersona.name}</span>
-              </div>
-              <div className="mt-2 text-sm">
-                {personaDescriptions[selectedPersona.id]}
-              </div>
-            </div>
-
-            <div className="bg-base-200 rounded-lg shadow-md flex-grow flex flex-col">
-              <h2 className="text-lg font-semibold p-3 bg-base-300 rounded-t-lg">
-                Select a {personaTerms.singular}
-              </h2>
-              <div className="overflow-y-auto p-2 flex-grow">
-                {writingPersonas.map(persona => (
-                  <button
-                    key={persona.id}
-                    onClick={() => setSelectedPersona(persona)}
-                    className={`w-full px-4 py-2 rounded text-left mb-2 transition-colors duration-200 flex items-center ${
-                      selectedPersona.id === persona.id
-                        ? 'bg-primary text-primary-content shadow-md'
-                        : 'bg-base-100 hover:bg-base-300'
-                    }`}
+                {/* Writer's Level Selection */}
+                <div className="p-4 bg-base-200 text-base-content rounded-lg shadow-md">
+                  <div className="font-bold text-lg mb-2">Writer&apos;s Level</div>
+                  <select 
+                    value={writerLevel} 
+                    onChange={(e) => setWriterLevel(e.target.value)}
+                    className="select select-primary w-full max-w-xs"
                   >
-                    <span className="text-xl mr-2">{persona.emoji}</span>
-                    <span className="text-sm">{persona.name}</span>
-                  </button>
-                ))}
+                    {writerLevels.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
-            {/* Writer's Level Selection */}
-            <div className="p-4 bg-base-200 text-base-content rounded-lg shadow-md">
-              <div className="font-bold text-lg mb-2">Writer&apos;s Level</div>
-              <select 
-                value={writerLevel} 
-                onChange={(e) => setWriterLevel(e.target.value)}
-                className="select select-primary w-full max-w-xs"
-              >
-                {writerLevels.map((level) => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
-                ))}
-              </select>
-            </div>
+            )}
           </div>
-        </div>
-      </div>
-      <Footer />
-    </LayoutClient>
-  );
-}
-```
-
-# app/dashboard/page.js
-
-```js
-import Header from "@/components/Header";
-import ButtonAccount from "@/components/ButtonAccount";
-// import ButtonCheckout from "@/components/ButtonCheckout";
-import ButtonGradient from "@/components/ButtonGradient";
-// import config from "@/config";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/next-auth";
-import connectMongo from "@/libs/mongoose";
-import User from "@/models/User";
-import Link from "next/link";
-
-export const dynamic = "force-dynamic";
-
-export default async function Dashboard() {
-  await connectMongo();
-  const session = await getServerSession(authOptions);
-  const user = await User.findById(session.user.id);
-
-
-  return (
-    <>
-    <Header />
-
-    <main className="min-h-screen p-8 pb-24">
-      <section className="max-w-xl mx-auto space-y-8">
-        
-        
-        <ButtonAccount />
-        <h1 className="text-3xl md:text-4xl font-extrabold">
-            User Dashboard
-          </h1>
-          <p>Welcome {user.name} 👋</p>
-          <p>Your email is {user.email}</p>
-
-          <div className="my-8">
-            <Link href="/persona-chat" passHref>
-              <ButtonGradient title="Go to Persona Chat" />
-            </Link>
-          </div>
-
-      </section>
-    </main>
-    </>
-  );
-}
-
-```
-
-# app/dashboard/layout.js
-
-```js
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/next-auth";
-import config from "@/config";
-
-// This is a server-side component to ensure the user is logged in.
-// If not, it will redirect to the login page.
-// It's applied to all subpages of /dashboard in /app/dashboard/*** pages
-// You can also add custom static UI elements like a Navbar, Sidebar, Footer, etc..
-// See https://shipfa.st/docs/tutorials/private-page
-export default async function LayoutPrivate({ children }) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect(config.auth.loginUrl);
-  }
-
-  return <>{children}</>;
-}
-
-```
-
-# app/privacy-policy/page.js
-
-```js
-import Link from "next/link";
-import { getSEOTags } from "@/libs/seo";
-import config from "@/config";
-
-// CHATGPT PROMPT TO GENERATE YOUR PRIVACY POLICY — replace with your own data 👇
-
-// 1. Go to https://chat.openai.com/
-// 2. Copy paste bellow
-// 3. Replace the data with your own (if needed)
-// 4. Paste the answer from ChatGPT directly in the <pre> tag below
-
-// You are an excellent lawyer.
-
-// I need your help to write a simple privacy policy for my website. Here is some context:
-// - Website: https://shipfa.st
-// - Name: ShipFast
-// - Description: A JavaScript code boilerplate to help entrepreneurs launch their startups faster
-// - User data collected: name, email and payment information
-// - Non-personal data collection: web cookies
-// - Purpose of Data Collection: Order processing
-// - Data sharing: we do not share the data with any other parties
-// - Children's Privacy: we do not collect any data from children
-// - Updates to the Privacy Policy: users will be updated by email
-// - Contact information: marc@shipfa.st
-
-// Please write a simple privacy policy for my site. Add the current date.  Do not add or explain your reasoning. Answer:
-
-export const metadata = getSEOTags({
-  title: `Privacy Policy | ${config.appName}`,
-  canonicalUrlRelative: "/privacy-policy",
-});
-
-const PrivacyPolicy = () => {
-  return (
-    <main className="max-w-xl mx-auto">
-      <div className="p-5">
-        <Link href="/" className="btn btn-ghost">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="w-5 h-5"
-          >
-            <path
-              fillRule="evenodd"
-              d="M15 10a.75.75 0 01-.75.75H7.612l2.158 1.96a.75.75 0 11-1.04 1.08l-3.5-3.25a.75.75 0 010-1.08l3.5-3.25a.75.75 0 111.04 1.08L7.612 9.25h6.638A.75.75 0 0115 10z"
-              clipRule="evenodd"
-            />
-          </svg>{" "}
-          Back
-        </Link>
-        <h1 className="text-3xl font-extrabold pb-6">
-          Privacy Policy for {config.appName}
-        </h1>
-
-        <pre
-          className="leading-relaxed whitespace-pre-wrap"
-          style={{ fontFamily: "sans-serif" }}
-        >
-          {`Effective Date: July 16, 2024
-
-Thank you for visiting Writinggroup.ai ("we," "us," or "our"). This Privacy Policy outlines how we collect, use, and protect your personal and non-personal information when you use our website located at https://jhadruk.com (the "Website").
-
-By accessing or using the Website, you agree to the terms of this Privacy Policy. If you do not agree with the practices described in this policy, please do not use the Website.
-
-1. Information We Collect
-
-1.1 Personal Data
-
-We collect the following personal information from you:
-
-Name: We collect your name to personalize your experience and communicate with you effectively.
-Email: We collect your email address to send you important information regarding your orders, updates, and communication.
-Payment Information: We collect payment details to process your orders securely.
-1.2 Non-Personal Data
-
-We may use web cookies and similar technologies to collect non-personal information such as your IP address, browser type, device information, and browsing patterns. This information helps us to enhance your browsing experience, analyze trends, and improve our services.
-
-2. Purpose of Data Collection
-
-We collect and use your personal data for the sole purpose of order processing. This includes processing your orders, sending order confirmations, providing customer support, and keeping you updated about the status of your orders.
-
-3. Data Sharing
-
-We do not share your personal data with any third parties.
-
-4. Children's Privacy
-
-Writinggroup.ai is not intended for children under the age of 13. We do not knowingly collect personal information from children. If you are a parent or guardian and believe that your child has provided us with personal information, please contact us at the email address provided below.
-
-5. Updates to the Privacy Policy
-
-We may update this Privacy Policy from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons. Any updates will be posted on this page, and we may notify you via email about significant changes.
-
-6. Contact Information
-
-If you have any questions, concerns, or requests related to this Privacy Policy, you can contact us at:
-
-Email: temunix@wgroup.jhadruk.com
-
-By using Writinggroup.ai, you consent to the terms of this Privacy Policy.`}
-        </pre>
-      </div>
-    </main>
-  );
-};
-
-export default PrivacyPolicy;
-
+          <Footer />
+        </LayoutClient>
+      );
+    }
 ```
 
 # app/blog/page.js
@@ -5998,6 +6163,90 @@ export default async function LayoutBlog({ children }) {
 # public/blog/introducing-supabase/header.png
 
 This is a binary file of the type: Image
+
+# app/api/persona/route.js
+
+```js
+import { NextResponse } from 'next/server';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+function extractPersonaResponse(fullResponse) {
+  const match = fullResponse.match(/<persona_response>([\s\S]*)<\/persona_response>/);
+  return match ? match[1].trim() : fullResponse;
+}
+
+export async function POST(request) {
+  const body = await request.json();
+  const { message, user_id, persona, prompt, writerLevel } = body;
+
+  try {
+    const combinedPrompt = `${prompt} The writer's level is: ${writerLevel}`;
+    
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: combinedPrompt },
+        { role: "user", content: message }
+      ],
+    });
+
+    const fullPersonaResponse = completion.choices[0].message.content;
+    const filteredResponse = extractPersonaResponse(fullPersonaResponse);
+
+    // Here you could log the interaction or save it to a database
+    console.log(`User ${user_id} sent to ${persona}: ${message}`);
+    console.log(`Persona responded: ${filteredResponse}`);
+
+    return NextResponse.json({ response: filteredResponse });
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+    return NextResponse.json({ error: 'An error occurred while processing your request.' }, { status: 500 });
+  }
+}
+
+```
+
+# app/api/lead/route.js
+
+```js
+import { NextResponse } from "next/server";
+import connectMongo from "@/libs/mongoose";
+import Lead from "@/models/Lead";
+
+// This route is used to store the leads that are generated from the landing page.
+// The API call is initiated by <ButtonLead /> component
+// Duplicate emails just return 200 OK
+export async function POST(req) {
+  await connectMongo();
+
+  const body = await req.json();
+
+  if (!body.email) {
+    return NextResponse.json({ error: "Email is required" }, { status: 400 });
+  }
+
+  try {
+    const lead = await Lead.findOne({ email: body.email });
+
+    if (!lead) {
+      await Lead.create({ email: body.email });
+
+      // Here you can add your own logic
+      // For instance, sending a welcome email (use the the sendEmail helper function from /libs/mailgun)
+    }
+
+    return NextResponse.json({});
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+```
 
 # app/blog/_assets/content.js
 
@@ -6427,85 +6676,324 @@ export default async function Article({ params }) {
 
 ```
 
-# app/api/lead/route.js
+# app/api/webhook/stripe/route.js
 
 ```js
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import Stripe from "stripe";
 import connectMongo from "@/libs/mongoose";
-import Lead from "@/models/Lead";
+import configFile from "@/config";
+import User from "@/models/User";
+import { findCheckoutSession } from "@/libs/stripe";
 
-// This route is used to store the leads that are generated from the landing page.
-// The API call is initiated by <ButtonLead /> component
-// Duplicate emails just return 200 OK
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+// This is where we receive Stripe webhook events
+// It used to update the user data, send emails, etc...
+// By default, it'll store the user in the database
+// See more: https://shipfa.st/docs/features/payments
 export async function POST(req) {
   await connectMongo();
 
-  const body = await req.json();
+  const body = await req.text();
 
-  if (!body.email) {
-    return NextResponse.json({ error: "Email is required" }, { status: 400 });
+  const signature = headers().get("stripe-signature");
+
+  let data;
+  let eventType;
+  let event;
+
+  // verify Stripe event is legit
+  try {
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+  } catch (err) {
+    console.error(`Webhook signature verification failed. ${err.message}`);
+    return NextResponse.json({ error: err.message }, { status: 400 });
   }
 
+  data = event.data;
+  eventType = event.type;
+
   try {
-    const lead = await Lead.findOne({ email: body.email });
+    switch (eventType) {
+      case "checkout.session.completed": {
+        // First payment is successful and a subscription is created (if mode was set to "subscription" in ButtonCheckout)
+        // ✅ Grant access to the product
 
-    if (!lead) {
-      await Lead.create({ email: body.email });
+        const session = await findCheckoutSession(data.object.id);
 
-      // Here you can add your own logic
-      // For instance, sending a welcome email (use the the sendEmail helper function from /libs/mailgun)
+        const customerId = session?.customer;
+        const priceId = session?.line_items?.data[0]?.price.id;
+        const userId = data.object.client_reference_id;
+        const plan = configFile.stripe.plans.find((p) => p.priceId === priceId);
+
+        if (!plan) break;
+
+        const customer = await stripe.customers.retrieve(customerId);
+
+        let user;
+
+        // Get or create the user. userId is normally pass in the checkout session (clientReferenceID) to identify the user when we get the webhook event
+        if (userId) {
+          user = await User.findById(userId);
+        } else if (customer.email) {
+          user = await User.findOne({ email: customer.email });
+
+          if (!user) {
+            user = await User.create({
+              email: customer.email,
+              name: customer.name,
+            });
+
+            await user.save();
+          }
+        } else {
+          console.error("No user found");
+          throw new Error("No user found");
+        }
+
+        // Update user data + Grant user access to your product. It's a boolean in the database, but could be a number of credits, etc...
+        user.priceId = priceId;
+        user.customerId = customerId;
+        user.hasAccess = true;
+        await user.save();
+
+        // Extra: send email with user link, product page, etc...
+        // try {
+        //   await sendEmail({to: ...});
+        // } catch (e) {
+        //   console.error("Email issue:" + e?.message);
+        // }
+
+        break;
+      }
+
+      case "checkout.session.expired": {
+        // User didn't complete the transaction
+        // You don't need to do anything here, by you can send an email to the user to remind him to complete the transaction, for instance
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        // The customer might have changed the plan (higher or lower plan, cancel soon etc...)
+        // You don't need to do anything here, because Stripe will let us know when the subscription is canceled for good (at the end of the billing cycle) in the "customer.subscription.deleted" event
+        // You can update the user data to show a "Cancel soon" badge for instance
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        // The customer subscription stopped
+        // ❌ Revoke access to the product
+        // The customer might have changed the plan (higher or lower plan, cancel soon etc...)
+        const subscription = await stripe.subscriptions.retrieve(
+          data.object.id
+        );
+        const user = await User.findOne({ customerId: subscription.customer });
+
+        // Revoke access to your product
+        user.hasAccess = false;
+        await user.save();
+
+        break;
+      }
+
+      case "invoice.paid": {
+        // Customer just paid an invoice (for instance, a recurring payment for a subscription)
+        // ✅ Grant access to the product
+        const priceId = data.object.lines.data[0].price.id;
+        const customerId = data.object.customer;
+
+        const user = await User.findOne({ customerId });
+
+        // Make sure the invoice is for the same plan (priceId) the user subscribed to
+        if (user.priceId !== priceId) break;
+
+        // Grant user access to your product. It's a boolean in the database, but could be a number of credits, etc...
+        user.hasAccess = true;
+        await user.save();
+
+        break;
+      }
+
+      case "invoice.payment_failed":
+        // A payment failed (for instance the customer does not have a valid payment method)
+        // ❌ Revoke access to the product
+        // ⏳ OR wait for the customer to pay (more friendly):
+        //      - Stripe will automatically email the customer (Smart Retries)
+        //      - We will receive a "customer.subscription.deleted" when all retries were made and the subscription has expired
+
+        break;
+
+      default:
+      // Unhandled event type
+    }
+  } catch (e) {
+    console.error("stripe error: " + e.message + " | EVENT TYPE: " + eventType);
+  }
+
+  return NextResponse.json({});
+}
+
+```
+
+# app/api/webhook/mailgun/route.js
+
+```js
+import { NextResponse } from "next/server";
+import { sendEmail } from "@/libs/mailgun";
+import config from "@/config";
+
+// This route is used to receive emails from Mailgun and forward them to our customer support email.
+// See more: https://shipfa.st/docs/features/emails
+export async function POST(req) {
+  try {
+    // extract the email content, subject and sender
+    const formData = await req.formData();
+    const sender = formData.get("From");
+    const subject = formData.get("Subject");
+    const html = formData.get("body-html");
+
+    // send email to the admin if forwardRepliesTo is et & emailData exists
+    if (config.mailgun.forwardRepliesTo && html && subject && sender) {
+      await sendEmail({
+        to: config.mailgun.forwardRepliesTo,
+        subject: `${config?.appName} | ${subject}`,
+        html: `<div><p><b>- Subject:</b> ${subject}</p><p><b>- From:</b> ${sender}</p><p><b>- Content:</b></p><div>${html}</div></div>`,
+        replyTo: sender,
+      });
     }
 
     return NextResponse.json({});
   } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error(e?.message);
+    return NextResponse.json({ error: e?.message }, { status: 500 });
   }
 }
 
 ```
 
-# app/api/persona/route.js
+# app/api/stripe/create-portal/route.js
 
 ```js
-import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/libs/next-auth";
+import connectMongo from "@/libs/mongoose";
+import { createCustomerPortal } from "@/libs/stripe";
+import User from "@/models/User";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+export async function POST(req) {
+  const session = await getServerSession(authOptions);
 
-function extractPersonaResponse(fullResponse) {
-  const match = fullResponse.match(/<persona_response>([\s\S]*)<\/persona_response>/);
-  return match ? match[1].trim() : fullResponse;
+  if (session) {
+    try {
+      await connectMongo();
+
+      const body = await req.json();
+
+      const { id } = session.user;
+
+      const user = await User.findById(id);
+
+      if (!user?.customerId) {
+        return NextResponse.json(
+          {
+            error:
+              "You don't have a billing account yet. Make a purchase first.",
+          },
+          { status: 400 }
+        );
+      } else if (!body.returnUrl) {
+        return NextResponse.json(
+          { error: "Return URL is required" },
+          { status: 400 }
+        );
+      }
+
+      const stripePortalUrl = await createCustomerPortal({
+        customerId: user.customerId,
+        returnUrl: body.returnUrl,
+      });
+
+      return NextResponse.json({
+        url: stripePortalUrl,
+      });
+    } catch (e) {
+      console.error(e);
+      return NextResponse.json({ error: e?.message }, { status: 500 });
+    }
+  } else {
+    // Not Signed in
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
 }
 
-export async function POST(request) {
-  const body = await request.json();
-  const { message, user_id, persona, prompt, writerLevel } = body;
+```
+
+# app/api/stripe/create-checkout/route.js
+
+```js
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/libs/next-auth";
+import { createCheckout } from "@/libs/stripe";
+import connectMongo from "@/libs/mongoose";
+import User from "@/models/User";
+
+// This function is used to create a Stripe Checkout Session (one-time payment or subscription)
+// It's called by the <ButtonCheckout /> component
+// By default, it doesn't force users to be authenticated. But if they are, it will prefill the Checkout data with their email and/or credit card
+export async function POST(req) {
+  const body = await req.json();
+
+  if (!body.priceId) {
+    return NextResponse.json(
+      { error: "Price ID is required" },
+      { status: 400 }
+    );
+  } else if (!body.successUrl || !body.cancelUrl) {
+    return NextResponse.json(
+      { error: "Success and cancel URLs are required" },
+      { status: 400 }
+    );
+  } else if (!body.mode) {
+    return NextResponse.json(
+      {
+        error:
+          "Mode is required (either 'payment' for one-time payments or 'subscription' for recurring subscription)",
+      },
+      { status: 400 }
+    );
+  }
 
   try {
-    const combinedPrompt = `${prompt} The writer's level is: ${writerLevel}`;
-    
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: combinedPrompt },
-        { role: "user", content: message }
-      ],
+    const session = await getServerSession(authOptions);
+
+    await connectMongo();
+
+    const user = await User.findById(session?.user?.id);
+
+    const { priceId, mode, successUrl, cancelUrl } = body;
+
+    const stripeSessionURL = await createCheckout({
+      priceId,
+      mode,
+      successUrl,
+      cancelUrl,
+      // If user is logged in, it will pass the user ID to the Stripe Session so it can be retrieved in the webhook later
+      clientReferenceId: user?._id?.toString(),
+      // If user is logged in, this will automatically prefill Checkout data like email and/or credit card for faster checkout
+      user,
+      // If you send coupons from the frontend, you can pass it here
+      // couponId: body.couponId,
     });
 
-    const fullPersonaResponse = completion.choices[0].message.content;
-    const filteredResponse = extractPersonaResponse(fullPersonaResponse);
-
-    // Here you could log the interaction or save it to a database
-    console.log(`User ${user_id} sent to ${persona}: ${message}`);
-    console.log(`Persona responded: ${filteredResponse}`);
-
-    return NextResponse.json({ response: filteredResponse });
-  } catch (error) {
-    console.error('OpenAI API error:', error);
-    return NextResponse.json({ error: 'An error occurred while processing your request.' }, { status: 500 });
+    return NextResponse.json({ url: stripeSessionURL });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: e?.message }, { status: 500 });
   }
 }
 
@@ -6587,6 +7075,18 @@ export default async function Category({ params }) {
     </>
   );
 }
+
+```
+
+# app/api/auth/[...nextauth]/route.js
+
+```js
+import NextAuth from "next-auth";
+import { authOptions } from "@/libs/next-auth";
+
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
 
 ```
 
@@ -7142,341 +7642,6 @@ const Avatar = ({ article }) => {
 };
 
 export default Avatar;
-
-```
-
-# app/api/stripe/create-portal/route.js
-
-```js
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/libs/next-auth";
-import connectMongo from "@/libs/mongoose";
-import { createCustomerPortal } from "@/libs/stripe";
-import User from "@/models/User";
-
-export async function POST(req) {
-  const session = await getServerSession(authOptions);
-
-  if (session) {
-    try {
-      await connectMongo();
-
-      const body = await req.json();
-
-      const { id } = session.user;
-
-      const user = await User.findById(id);
-
-      if (!user?.customerId) {
-        return NextResponse.json(
-          {
-            error:
-              "You don't have a billing account yet. Make a purchase first.",
-          },
-          { status: 400 }
-        );
-      } else if (!body.returnUrl) {
-        return NextResponse.json(
-          { error: "Return URL is required" },
-          { status: 400 }
-        );
-      }
-
-      const stripePortalUrl = await createCustomerPortal({
-        customerId: user.customerId,
-        returnUrl: body.returnUrl,
-      });
-
-      return NextResponse.json({
-        url: stripePortalUrl,
-      });
-    } catch (e) {
-      console.error(e);
-      return NextResponse.json({ error: e?.message }, { status: 500 });
-    }
-  } else {
-    // Not Signed in
-    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
-  }
-}
-
-```
-
-# app/api/stripe/create-checkout/route.js
-
-```js
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/libs/next-auth";
-import { createCheckout } from "@/libs/stripe";
-import connectMongo from "@/libs/mongoose";
-import User from "@/models/User";
-
-// This function is used to create a Stripe Checkout Session (one-time payment or subscription)
-// It's called by the <ButtonCheckout /> component
-// By default, it doesn't force users to be authenticated. But if they are, it will prefill the Checkout data with their email and/or credit card
-export async function POST(req) {
-  const body = await req.json();
-
-  if (!body.priceId) {
-    return NextResponse.json(
-      { error: "Price ID is required" },
-      { status: 400 }
-    );
-  } else if (!body.successUrl || !body.cancelUrl) {
-    return NextResponse.json(
-      { error: "Success and cancel URLs are required" },
-      { status: 400 }
-    );
-  } else if (!body.mode) {
-    return NextResponse.json(
-      {
-        error:
-          "Mode is required (either 'payment' for one-time payments or 'subscription' for recurring subscription)",
-      },
-      { status: 400 }
-    );
-  }
-
-  try {
-    const session = await getServerSession(authOptions);
-
-    await connectMongo();
-
-    const user = await User.findById(session?.user?.id);
-
-    const { priceId, mode, successUrl, cancelUrl } = body;
-
-    const stripeSessionURL = await createCheckout({
-      priceId,
-      mode,
-      successUrl,
-      cancelUrl,
-      // If user is logged in, it will pass the user ID to the Stripe Session so it can be retrieved in the webhook later
-      clientReferenceId: user?._id?.toString(),
-      // If user is logged in, this will automatically prefill Checkout data like email and/or credit card for faster checkout
-      user,
-      // If you send coupons from the frontend, you can pass it here
-      // couponId: body.couponId,
-    });
-
-    return NextResponse.json({ url: stripeSessionURL });
-  } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: e?.message }, { status: 500 });
-  }
-}
-
-```
-
-# app/api/auth/[...nextauth]/route.js
-
-```js
-import NextAuth from "next-auth";
-import { authOptions } from "@/libs/next-auth";
-
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST };
-
-```
-
-# app/api/webhook/stripe/route.js
-
-```js
-import { NextResponse } from "next/server";
-import { headers } from "next/headers";
-import Stripe from "stripe";
-import connectMongo from "@/libs/mongoose";
-import configFile from "@/config";
-import User from "@/models/User";
-import { findCheckoutSession } from "@/libs/stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-// This is where we receive Stripe webhook events
-// It used to update the user data, send emails, etc...
-// By default, it'll store the user in the database
-// See more: https://shipfa.st/docs/features/payments
-export async function POST(req) {
-  await connectMongo();
-
-  const body = await req.text();
-
-  const signature = headers().get("stripe-signature");
-
-  let data;
-  let eventType;
-  let event;
-
-  // verify Stripe event is legit
-  try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (err) {
-    console.error(`Webhook signature verification failed. ${err.message}`);
-    return NextResponse.json({ error: err.message }, { status: 400 });
-  }
-
-  data = event.data;
-  eventType = event.type;
-
-  try {
-    switch (eventType) {
-      case "checkout.session.completed": {
-        // First payment is successful and a subscription is created (if mode was set to "subscription" in ButtonCheckout)
-        // ✅ Grant access to the product
-
-        const session = await findCheckoutSession(data.object.id);
-
-        const customerId = session?.customer;
-        const priceId = session?.line_items?.data[0]?.price.id;
-        const userId = data.object.client_reference_id;
-        const plan = configFile.stripe.plans.find((p) => p.priceId === priceId);
-
-        if (!plan) break;
-
-        const customer = await stripe.customers.retrieve(customerId);
-
-        let user;
-
-        // Get or create the user. userId is normally pass in the checkout session (clientReferenceID) to identify the user when we get the webhook event
-        if (userId) {
-          user = await User.findById(userId);
-        } else if (customer.email) {
-          user = await User.findOne({ email: customer.email });
-
-          if (!user) {
-            user = await User.create({
-              email: customer.email,
-              name: customer.name,
-            });
-
-            await user.save();
-          }
-        } else {
-          console.error("No user found");
-          throw new Error("No user found");
-        }
-
-        // Update user data + Grant user access to your product. It's a boolean in the database, but could be a number of credits, etc...
-        user.priceId = priceId;
-        user.customerId = customerId;
-        user.hasAccess = true;
-        await user.save();
-
-        // Extra: send email with user link, product page, etc...
-        // try {
-        //   await sendEmail({to: ...});
-        // } catch (e) {
-        //   console.error("Email issue:" + e?.message);
-        // }
-
-        break;
-      }
-
-      case "checkout.session.expired": {
-        // User didn't complete the transaction
-        // You don't need to do anything here, by you can send an email to the user to remind him to complete the transaction, for instance
-        break;
-      }
-
-      case "customer.subscription.updated": {
-        // The customer might have changed the plan (higher or lower plan, cancel soon etc...)
-        // You don't need to do anything here, because Stripe will let us know when the subscription is canceled for good (at the end of the billing cycle) in the "customer.subscription.deleted" event
-        // You can update the user data to show a "Cancel soon" badge for instance
-        break;
-      }
-
-      case "customer.subscription.deleted": {
-        // The customer subscription stopped
-        // ❌ Revoke access to the product
-        // The customer might have changed the plan (higher or lower plan, cancel soon etc...)
-        const subscription = await stripe.subscriptions.retrieve(
-          data.object.id
-        );
-        const user = await User.findOne({ customerId: subscription.customer });
-
-        // Revoke access to your product
-        user.hasAccess = false;
-        await user.save();
-
-        break;
-      }
-
-      case "invoice.paid": {
-        // Customer just paid an invoice (for instance, a recurring payment for a subscription)
-        // ✅ Grant access to the product
-        const priceId = data.object.lines.data[0].price.id;
-        const customerId = data.object.customer;
-
-        const user = await User.findOne({ customerId });
-
-        // Make sure the invoice is for the same plan (priceId) the user subscribed to
-        if (user.priceId !== priceId) break;
-
-        // Grant user access to your product. It's a boolean in the database, but could be a number of credits, etc...
-        user.hasAccess = true;
-        await user.save();
-
-        break;
-      }
-
-      case "invoice.payment_failed":
-        // A payment failed (for instance the customer does not have a valid payment method)
-        // ❌ Revoke access to the product
-        // ⏳ OR wait for the customer to pay (more friendly):
-        //      - Stripe will automatically email the customer (Smart Retries)
-        //      - We will receive a "customer.subscription.deleted" when all retries were made and the subscription has expired
-
-        break;
-
-      default:
-      // Unhandled event type
-    }
-  } catch (e) {
-    console.error("stripe error: " + e.message + " | EVENT TYPE: " + eventType);
-  }
-
-  return NextResponse.json({});
-}
-
-```
-
-# app/api/webhook/mailgun/route.js
-
-```js
-import { NextResponse } from "next/server";
-import { sendEmail } from "@/libs/mailgun";
-import config from "@/config";
-
-// This route is used to receive emails from Mailgun and forward them to our customer support email.
-// See more: https://shipfa.st/docs/features/emails
-export async function POST(req) {
-  try {
-    // extract the email content, subject and sender
-    const formData = await req.formData();
-    const sender = formData.get("From");
-    const subject = formData.get("Subject");
-    const html = formData.get("body-html");
-
-    // send email to the admin if forwardRepliesTo is et & emailData exists
-    if (config.mailgun.forwardRepliesTo && html && subject && sender) {
-      await sendEmail({
-        to: config.mailgun.forwardRepliesTo,
-        subject: `${config?.appName} | ${subject}`,
-        html: `<div><p><b>- Subject:</b> ${subject}</p><p><b>- From:</b> ${sender}</p><p><b>- Content:</b></p><div>${html}</div></div>`,
-        replyTo: sender,
-      });
-    }
-
-    return NextResponse.json({});
-  } catch (e) {
-    console.error(e?.message);
-    return NextResponse.json({ error: e?.message }, { status: 500 });
-  }
-}
 
 ```
 
