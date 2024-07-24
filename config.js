@@ -22,15 +22,15 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1Pf5EuGn65zs7jMVAJ9DdXAz"
-            : "price_1Pf63SGn65zs7jMV5p68kZfW",
+            : "price_1Pg7nvGn65zs7jMVhDLzCSZd",
         //  REQUIRED - Name of the plan, displayed on the pricing page
         name: "Starter",
         // A friendly description of the plan, displayed on the pricing page. Tip: explain why this plan and not others
         description: "Kickstart your storytelling adventure",
         // The price you want to display, the one user will be charged on Stripe.
-        price: 15,
+        price: 10,
         // If you have an anchor price (i.e. $29) that you want to display crossed out, put it here. Otherwise, leave it empty
-        priceAnchor: 30,
+        priceAnchor: 20,
         features: [
           { name: "Explore unique AI writing personas including The Editor, The Critic, and The Motivator" },
           { name: "Craft short stories with 5,000 word capacity per review" },
@@ -43,11 +43,11 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1Pf5FHGn65zs7jMVlucf4vVN"
-            : "price_1Pf63RGn65zs7jMVMCcFJzuo",
+            : "price_1Pg7oAGn65zs7jMVk1fD8ohy",
         name: "Advanced",
         description: "Elevate your writing to new heights",
-        price: 25,
-        priceAnchor: 50,
+        price: 15,
+        priceAnchor: 30,
         features: [
           { name: "Expand your horizons with 25,000 word capacity per review" },
           { name: "Diversify your voice with an expanded set of AI writing personas" },
