@@ -293,3 +293,50 @@ export const writingLevelPrompts = {
   Intermediate: 'Writing level prompt for intermediate writers using Persona 1',
   Advanced: 'Writing level prompt for advanced writers using Persona 1'
 };
+
+export const initalWelcomeMessage = {
+  freeWelcomeMessage: `# Welcome to the free version of WritingGroupAI! 🖋️✨
+
+I'm the Mentor, and I'm here to introduce you to your new writing personas. In this free version, you have {FREE_MESSAGE_LIMIT} messages to explore our personas and get a taste of what we offer.
+
+Ready to start? Here's how:
+
+1. **Choose Your Guide** 👥
+   Select from our diverse personas, each offering a unique perspective on your writing.
+
+2. **Set Your Level** 📊
+   Tell us your writing level for tailored advice.
+
+3. **Share Your Words** 📝
+   Type your writing sample in the chat box below.
+
+4. **Engage and Explore** 💬
+   Chat with the personas and watch your writing transform!
+
+Remember, you have {FREE_MESSAGE_LIMIT} messages to use. Make them count! 
+
+If you find our feedback valuable, consider upgrading to our paid version for unlimited access to all our features.
+
+Let's bring your words to life!`,
+  paidWelcomeMessage: `# Welcome to WritingGroupAI, esteemed writer! 🖋️✨
+
+I'm the Mentor, and I'm thrilled to introduce you to your dedicated writing personas. As a valued member with full access, you have unlimited interactions with our diverse personas.
+
+Let's embark on your writing journey:
+
+1. **Choose Your Guide** 👥
+   Explore our range of personas, each offering unique insights to elevate your writing.
+
+2. **Set Your Level** 📊
+   Inform us about your writing experience for personalized guidance.
+
+3. **Share Your Creations** 📝
+   Present your writing in the chat box below.
+
+4. **Engage Deeply** 💬
+   Interact freely with the personas to refine and transform your work.
+
+With unlimited access, you can dive deep into your writing process, receiving comprehensive feedback and support at every stage.
+
+Ready to elevate your craft? Let's begin this exciting journey together!`
+}
