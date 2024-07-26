@@ -51,8 +51,8 @@ export default function PersonaChatClient() {
       const initialMessage = {
         role: 'persona',
         content: hasPaid 
-          ? initalWelcomeMessage.paidWelcomeMessage 
-          : initalWelcomeMessage.freeWelcomeMessage.replace(/{FREE_MESSAGE_LIMIT}/g, FREE_MESSAGE_LIMIT),
+          ? decodeURIComponent(initalWelcomeMessage.paidWelcomeMessage)
+          : decodeURIComponent(initalWelcomeMessage.freeWelcomeMessage).replace(/{FREE_MESSAGE_LIMIT}/g, FREE_MESSAGE_LIMIT),
         personaName: mentorPersona.name,
         personaEmoji: mentorPersona.emoji
       };
