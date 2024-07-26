@@ -297,9 +297,9 @@ export const writingLevelPrompts = {
 export const initalWelcomeMessage = {
   freeWelcomeMessage: `# Welcome to the free version of WritingGroupAI! 🖋️✨
 
-I'm the Mentor, and I'm here to introduce you to your new writing personas. In this free version, you have {FREE_MESSAGE_LIMIT} messages to explore our personas and get a taste of what we offer.
+I&#39;m the Mentor, and I&#39;m here to introduce you to your new writing personas. In this free version, you have {FREE_MESSAGE_LIMIT} messages to explore our personas and get a taste of what we offer.
 
-Ready to start? Here's how:
+Ready to start? Here&#39;s how:
 
 1. **Choose Your Guide** 👥
    Select from our diverse personas, each offering a unique perspective on your writing.
@@ -317,12 +317,13 @@ Remember, you have {FREE_MESSAGE_LIMIT} messages to use. Make them count!
 
 If you find our feedback valuable, consider upgrading to our paid version for unlimited access to all our features.
 
-Let's bring your words to life!`,
+Let&#39;s bring your words to life!`,
+
   paidWelcomeMessage: `# Welcome to WritingGroupAI, esteemed writer! 🖋️✨
 
-I'm the Mentor, and I'm thrilled to introduce you to your dedicated writing personas. As a valued member with full access, you have unlimited interactions with our diverse personas.
+I&#39;m the Mentor, and I&#39;m thrilled to introduce you to your dedicated writing personas. As a valued member with full access, you have unlimited interactions with our diverse personas.
 
-Let's embark on your writing journey:
+Let&#39;s embark on your writing journey:
 
 1. **Choose Your Guide** 👥
    Explore our range of personas, each offering unique insights to elevate your writing.
@@ -338,5 +339,5 @@ Let's embark on your writing journey:
 
 With unlimited access, you can dive deep into your writing process, receiving comprehensive feedback and support at every stage.
 
-Ready to elevate your craft? Let's begin this exciting journey together!`
+Ready to elevate your craft? Let&#39;s begin this exciting journey together!`
 }
