@@ -51,8 +51,8 @@ export default function PersonaChatClient() {
       const initialMessage = {
         role: 'persona',
         content: hasPaid 
-          ? decodeURIComponent(initalWelcomeMessage.paidWelcomeMessage)
-          : decodeURIComponent(initalWelcomeMessage.freeWelcomeMessage).replace(/{FREE_MESSAGE_LIMIT}/g, FREE_MESSAGE_LIMIT),
+          ? initalWelcomeMessage.paidWelcomeMessage 
+          : initalWelcomeMessage.freeWelcomeMessage.replace(/{FREE_MESSAGE_LIMIT}/g, FREE_MESSAGE_LIMIT),
         personaName: mentorPersona.name,
         personaEmoji: mentorPersona.emoji
       };
@@ -251,7 +251,7 @@ export default function PersonaChatClient() {
             </div>
             {/* Writer's Level Selection */}
             <div className="p-4 bg-base-200 text-base-content rounded-lg shadow-md">
-              <div className="font-bold text-lg mb-2">Writer's Level</div>
+              <div className="font-bold text-lg mb-2">Writer&apos;s Level</div>
               <select 
                 value={writerLevel} 
                 onChange={(e) => setWriterLevel(e.target.value)}
