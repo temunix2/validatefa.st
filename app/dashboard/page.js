@@ -47,12 +47,23 @@ export default async function Dashboard() {
                 <Link href={buttonLink} passHref>
                   <ButtonGradient title={buttonTitle} />
                 </Link>
+                {!hasPaid && (
+                  <>
+                    <div >
+                      <Link href="/persona-chat">
+                        <button className="btn btn-primary normal-case px-8">
+                          Try Free Writing Group AI
+                        </button>
+                      </Link>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             {!hasPaid && (
               <div className="border-t pt-4">
                 <p className="text-sm text-gray-600">
-                  Upgrade to premium to access all features, including the Writing Group AI.
+                  Upgrade to premium to access all features, including unlimited use of the Writing Group AI.
                 </p>
               </div>
             )}
