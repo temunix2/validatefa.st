@@ -22,15 +22,15 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1Pf5EuGn65zs7jMVAJ9DdXAz"
-            : "price_1Pg7nvGn65zs7jMVhDLzCSZd",
+            : "price_1Pj1AiGn65zs7jMVcIDje3Md",
         //  REQUIRED - Name of the plan, displayed on the pricing page
         name: "Starter",
         // A friendly description of the plan, displayed on the pricing page. Tip: explain why this plan and not others
         description: "Kickstart your storytelling adventure",
         // The price you want to display, the one user will be charged on Stripe.
-        price: 10,
+        price: 5,
         // If you have an anchor price (i.e. $29) that you want to display crossed out, put it here. Otherwise, leave it empty
-        priceAnchor: 20,
+        priceAnchor: 10,
         features: [
           { name: "Explore unique AI writing personas including The Editor, The Critic, and The Motivator" },
           { name: "Craft short stories with 5,000 word capacity per review" },
@@ -43,11 +43,11 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1Pf5FHGn65zs7jMVlucf4vVN"
-            : "price_1Pg7oAGn65zs7jMVk1fD8ohy",
+            : "price_1Pj1BSGn65zs7jMVh4HYdZ75",
         name: "Advanced",
         description: "Elevate your writing to new heights",
-        price: 15,
-        priceAnchor: 30,
+        price: 10,
+        priceAnchor: 20,
         features: [
           { name: "Expand your horizons with 25,000 word capacity per review" },
           { name: "Diversify your voice with an expanded set of AI writing personas" },
@@ -59,8 +59,8 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1Pf5GVGn65zs7jMVq49yO3ss"
-            : "price_1Pf63PGn65zs7jMVv7ZSxZCo",
-        name: "Professional",
+            : "price_1Pj1BlGn65zs7jMV1CEVYybq",
+        name: "Lifetime",
         description: "Unlock your full creative potential",
         price: 50,
         priceAnchor: 100,
@@ -69,7 +69,7 @@ const config = {
           { name: "Access to all AI writing personas" },
           { name: "Elevate accuracy with powerful research tools" },
           { name: "Skyrocket productivity with advanced tools" },
-          { name: "Access all Pro features and beyond!" },
+          { name: "Access all features for Life!" },
         ],
       },
     ],
