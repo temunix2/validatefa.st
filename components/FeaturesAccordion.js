@@ -15,9 +15,8 @@ const features = [
     title: "Emails",
     description:
       "Send transactional emails, setup your DNS to avoid spam folder (DKIM, DMARC, SPF in subdomain), and listen to webhook to receive & forward emails",
-    type: "video",
-    path: "https://d3m8mk7e1mf7xn.cloudfront.net/app/newsletter.webm",
-    format: "video/webm",
+    type: "youtube",
+    videoId: "u_ovh4B8l7k", // Replace with your actual YouTube video ID
     svg: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -146,15 +145,29 @@ const Item = ({ feature, isOpen, setFeatureSelected }) => {
 
 // A component to display the media (video or image) of the feature. If the type is not specified, it will display an empty div.
 // Video are set to autoplay for best UX.
+// Update the Media component to handle YouTube videos
 const Media = ({ feature }) => {
-  const { type, path, format, alt } = feature;
+  const { type, videoId, path, format, alt } = feature;
   const style = "rounded-2xl aspect-square w-full sm:w-[26rem]";
   const size = {
     width: 500,
     height: 500,
   };
 
-  if (type === "video") {
+  if (type === "youtube") {
+    return (
+      <iframe
+        className={style}
+        width={size.width}
+        height={size.height}
+        src={`https://www.youtube.com/embed/${videoId}`}
+        title="YouTube video player"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      ></iframe>
+    );
+  } else if (type === "video") {
     return (
       <video
         className={style}
