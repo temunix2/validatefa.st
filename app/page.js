@@ -19,7 +19,7 @@ export default function Home() {
         <Hero />
         <Problem />
         <WithWithout />
-        <FeaturesAccordion />
+        {/* <FeaturesAccordion /> */}
         <Pricing />
         <FAQ />
       </main>
