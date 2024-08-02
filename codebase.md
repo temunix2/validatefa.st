@@ -353,15 +353,15 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1Pf5EuGn65zs7jMVAJ9DdXAz"
-            : "price_1Pg7nvGn65zs7jMVhDLzCSZd",
+            : "price_1Pj1AiGn65zs7jMVcIDje3Md",
         //  REQUIRED - Name of the plan, displayed on the pricing page
         name: "Starter",
         // A friendly description of the plan, displayed on the pricing page. Tip: explain why this plan and not others
         description: "Kickstart your storytelling adventure",
         // The price you want to display, the one user will be charged on Stripe.
-        price: 10,
+        price: 5,
         // If you have an anchor price (i.e. $29) that you want to display crossed out, put it here. Otherwise, leave it empty
-        priceAnchor: 20,
+        priceAnchor: 10,
         features: [
           { name: "Explore unique AI writing personas including The Editor, The Critic, and The Motivator" },
           { name: "Craft short stories with 5,000 word capacity per review" },
@@ -374,11 +374,11 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1Pf5FHGn65zs7jMVlucf4vVN"
-            : "price_1Pg7oAGn65zs7jMVk1fD8ohy",
+            : "price_1Pj1BSGn65zs7jMVh4HYdZ75",
         name: "Advanced",
         description: "Elevate your writing to new heights",
-        price: 15,
-        priceAnchor: 30,
+        price: 10,
+        priceAnchor: 20,
         features: [
           { name: "Expand your horizons with 25,000 word capacity per review" },
           { name: "Diversify your voice with an expanded set of AI writing personas" },
@@ -390,8 +390,8 @@ const config = {
         priceId:
           process.env.NODE_ENV === "development"
             ? "price_1Pf5GVGn65zs7jMVq49yO3ss"
-            : "price_1Pf63PGn65zs7jMVv7ZSxZCo",
-        name: "Professional",
+            : "price_1Pj1BlGn65zs7jMV1CEVYybq",
+        name: "Lifetime",
         description: "Unlock your full creative potential",
         price: 50,
         priceAnchor: 100,
@@ -400,7 +400,7 @@ const config = {
           { name: "Access to all AI writing personas" },
           { name: "Elevate accuracy with powerful research tools" },
           { name: "Skyrocket productivity with advanced tools" },
-          { name: "Access all Pro features and beyond!" },
+          { name: "Access all features for Life!" },
         ],
       },
     ],
@@ -3624,9 +3624,8 @@ const features = [
     title: "Emails",
     description:
       "Send transactional emails, setup your DNS to avoid spam folder (DKIM, DMARC, SPF in subdomain), and listen to webhook to receive & forward emails",
-    type: "video",
-    path: "https://d3m8mk7e1mf7xn.cloudfront.net/app/newsletter.webm",
-    format: "video/webm",
+    type: "youtube",
+    videoId: "u_ovh4B8l7k", // Replace with your actual YouTube video ID
     svg: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -3755,15 +3754,29 @@ const Item = ({ feature, isOpen, setFeatureSelected }) => {
 
 // A component to display the media (video or image) of the feature. If the type is not specified, it will display an empty div.
 // Video are set to autoplay for best UX.
+// Update the Media component to handle YouTube videos
 const Media = ({ feature }) => {
-  const { type, path, format, alt } = feature;
+  const { type, videoId, path, format, alt } = feature;
   const style = "rounded-2xl aspect-square w-full sm:w-[26rem]";
   const size = {
     width: 500,
     height: 500,
   };
 
-  if (type === "video") {
+  if (type === "youtube") {
+    return (
+      <iframe
+        className={style}
+        width={size.width}
+        height={size.height}
+        src={`https://www.youtube.com/embed/${videoId}`}
+        title="YouTube video player"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      ></iframe>
+    );
+  } else if (type === "video") {
     return (
       <video
         className={style}
@@ -4615,7 +4628,7 @@ import Pricing from "@/components/Pricing";
 import FAQ from "@/components/FAQ";
 // import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
-// import FeaturesListicle from '@/components/FeaturesListicle';
+import FeaturesAccordion from '@/components/FeaturesAccordion';
 
 export default function Home() {
   return (
@@ -4627,6 +4640,7 @@ export default function Home() {
         <Hero />
         <Problem />
         <WithWithout />
+        <FeaturesAccordion />
         <Pricing />
         <FAQ />
       </main>
@@ -5315,195 +5329,6 @@ export default PrivacyPolicy;
 
 ```
 
-# app/dashboard/page.js
-
-```js
-import Header from "@/components/Header";
-import ButtonAccount from "@/components/ButtonAccount";
-import ButtonGradient from "@/components/ButtonGradient";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/next-auth";
-import connectMongo from "@/libs/mongoose";
-import User from "@/models/User";
-import Link from "next/link";
-import config from "@/config";
-
-export const dynamic = "force-dynamic";
-
-export default async function Dashboard() {
-  await connectMongo();
-  const session = await getServerSession(authOptions);
-  const user = session ? await User.findById(session.user.id) : null;
-
-  const hasPaid = user && user.customerId;
-  const buttonLink = hasPaid ? "/persona-chat" : "/#pricing";
-  const buttonTitle = hasPaid ? "Go to your Writing Group AI" : "Upgrade to Premium";
-
-  return (
-    <>
-      <Header />
-      <main className="min-h-screen p-8 pb-24">
-        <section className="max-w-xl mx-auto space-y-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <h1 className="text-3xl md:text-4xl font-extrabold">
-              User Dashboard
-            </h1>
-            <ButtonAccount />
-          </div>
-          <div className="bg-white shadow-md rounded-lg p-6 space-y-6">
-            <div>
-              <p className="text-xl font-semibold">Welcome, {user?.name} 👋</p>
-              <p className="mt-2">Thank you for joining us! We encourage you to explore the experience.</p>
-            </div>
-            <div className="border-t pt-4">
-              <h2 className="text-lg font-semibold mb-2">Account Management</h2>
-              <p className="text-sm text-gray-600 mb-2">
-                To manage your subscription and billing details, click the button in the top right next to User Dashboard.
-              </p>
-            </div>
-            <div className="border-t pt-4">
-              <h2 className="text-lg font-semibold mb-2">Quick Actions</h2>
-              <div className="space-y-4">
-                <Link href={buttonLink} passHref>
-                  <ButtonGradient title={buttonTitle} />
-                </Link>
-                {!hasPaid && (
-                  <>
-                    <div >
-                      <Link href="/persona-chat">
-                        <button className="btn btn-primary normal-case px-8">
-                          Try Free Writing Group AI
-                        </button>
-                      </Link>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            {!hasPaid && (
-              <div className="border-t pt-4">
-                <p className="text-sm text-gray-600">
-                  Upgrade to premium to access all features, including unlimited use of the Writing Group AI.
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
-      </main>
-    </>
-  );
-}
-```
-
-# app/dashboard/layout.js
-
-```js
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/next-auth";
-import config from "@/config";
-
-// This is a server-side component to ensure the user is logged in.
-// If not, it will redirect to the login page.
-// It's applied to all subpages of /dashboard in /app/dashboard/*** pages
-// You can also add custom static UI elements like a Navbar, Sidebar, Footer, etc..
-// See https://shipfa.st/docs/tutorials/private-page
-export default async function LayoutPrivate({ children }) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect(config.auth.loginUrl);
-  }
-
-  return <>{children}</>;
-}
-
-```
-
-# app/blog/page.js
-
-```js
-import { categories, articles } from "./_assets/content";
-import CardArticle from "./_assets/components/CardArticle";
-import CardCategory from "./_assets/components/CardCategory";
-import config from "@/config";
-import { getSEOTags } from "@/libs/seo";
-
-export const metadata = getSEOTags({
-  title: `${config.appName} Blog | Stripe Chargeback Protection`,
-  description:
-    "Learn how to prevent chargebacks, how to accept payments online, and keep your Stripe account in good standing",
-  canonicalUrlRelative: "/blog",
-});
-
-export default async function Blog() {
-  const articlesToDisplay = articles
-    .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
-    .slice(0, 6);
-  return (
-    <>
-      <section className="text-center max-w-xl mx-auto mt-12 mb-24 md:mb-32">
-        <h1 className="font-extrabold text-3xl lg:text-5xl tracking-tight mb-6">
-          The {config.appName} Blog
-        </h1>
-        <p className="text-lg opacity-80 leading-relaxed">
-          Learn how to ship your startup in days, not weeks. And get the latest
-          updates about the boilerplate
-        </p>
-      </section>
-
-      <section className="grid lg:grid-cols-2 mb-24 md:mb-32 gap-8">
-        {articlesToDisplay.map((article, i) => (
-          <CardArticle
-            article={article}
-            key={article.slug}
-            isImagePriority={i <= 2}
-          />
-        ))}
-      </section>
-
-      <section>
-        <p className="font-bold text-2xl lg:text-4xl tracking-tight text-center mb-8 md:mb-12">
-          Browse articles by category
-        </p>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {categories.map((category) => (
-            <CardCategory key={category.slug} category={category} tag="div" />
-          ))}
-        </div>
-      </section>
-    </>
-  );
-}
-
-```
-
-# app/blog/layout.js
-
-```js
-import { Suspense } from "react";
-import HeaderBlog from "./_assets/components/HeaderBlog";
-import Footer from "@/components/Footer";
-
-export default async function LayoutBlog({ children }) {
-  return (
-    <div>
-      <Suspense>
-        <HeaderBlog />
-      </Suspense>
-
-      <main className="min-h-screen max-w-6xl mx-auto p-8">{children}</main>
-
-      <div className="h-24" />
-
-      <Footer />
-    </div>
-  );
-}
-
-```
-
 # app/persona-chat/writingPersonas.js
 
 ```js
@@ -6188,93 +6013,198 @@ export default function PersonaChatClient() {
 }
 ```
 
+# app/dashboard/page.js
+
+```js
+import Header from "@/components/Header";
+import ButtonAccount from "@/components/ButtonAccount";
+import ButtonGradient from "@/components/ButtonGradient";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/next-auth";
+import connectMongo from "@/libs/mongoose";
+import User from "@/models/User";
+import Link from "next/link";
+import config from "@/config";
+
+export const dynamic = "force-dynamic";
+
+export default async function Dashboard() {
+  await connectMongo();
+  const session = await getServerSession(authOptions);
+  const user = session ? await User.findById(session.user.id) : null;
+
+  const hasPaid = user && user.customerId;
+  const buttonLink = hasPaid ? "/persona-chat" : "/#pricing";
+  const buttonTitle = hasPaid ? "Go to your Writing Group AI" : "Upgrade to Premium";
+
+  return (
+    <>
+      <Header />
+      <main className="min-h-screen p-8 pb-24">
+        <section className="max-w-xl mx-auto space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 className="text-3xl md:text-4xl font-extrabold">
+              User Dashboard
+            </h1>
+            <ButtonAccount />
+          </div>
+          <div className="bg-white shadow-md rounded-lg p-6 space-y-6">
+            <div>
+              <p className="text-xl font-semibold">Welcome, {user?.name} 👋</p>
+              <p className="mt-2">Thank you for joining us! We encourage you to explore the experience.</p>
+            </div>
+            <div className="border-t pt-4">
+              <h2 className="text-lg font-semibold mb-2">Account Management</h2>
+              <p className="text-sm text-gray-600 mb-2">
+                To manage your subscription and billing details, click the button in the top right next to User Dashboard.
+              </p>
+            </div>
+            <div className="border-t pt-4">
+              <h2 className="text-lg font-semibold mb-2">Quick Actions</h2>
+              <div className="space-y-4">
+                <Link href={buttonLink} passHref>
+                  <ButtonGradient title={buttonTitle} />
+                </Link>
+                {!hasPaid && (
+                  <>
+                    <div >
+                      <Link href="/persona-chat">
+                        <button className="btn btn-primary normal-case px-8">
+                          Try Free Writing Group AI
+                        </button>
+                      </Link>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            {!hasPaid && (
+              <div className="border-t pt-4">
+                <p className="text-sm text-gray-600">
+                  Upgrade to premium to access all features, including unlimited use of the Writing Group AI.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
+    </>
+  );
+}
+```
+
+# app/dashboard/layout.js
+
+```js
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/next-auth";
+import config from "@/config";
+
+// This is a server-side component to ensure the user is logged in.
+// If not, it will redirect to the login page.
+// It's applied to all subpages of /dashboard in /app/dashboard/*** pages
+// You can also add custom static UI elements like a Navbar, Sidebar, Footer, etc..
+// See https://shipfa.st/docs/tutorials/private-page
+export default async function LayoutPrivate({ children }) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect(config.auth.loginUrl);
+  }
+
+  return <>{children}</>;
+}
+
+```
+
+# app/blog/page.js
+
+```js
+import { categories, articles } from "./_assets/content";
+import CardArticle from "./_assets/components/CardArticle";
+import CardCategory from "./_assets/components/CardCategory";
+import config from "@/config";
+import { getSEOTags } from "@/libs/seo";
+
+export const metadata = getSEOTags({
+  title: `${config.appName} Blog | Stripe Chargeback Protection`,
+  description:
+    "Learn how to prevent chargebacks, how to accept payments online, and keep your Stripe account in good standing",
+  canonicalUrlRelative: "/blog",
+});
+
+export default async function Blog() {
+  const articlesToDisplay = articles
+    .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+    .slice(0, 6);
+  return (
+    <>
+      <section className="text-center max-w-xl mx-auto mt-12 mb-24 md:mb-32">
+        <h1 className="font-extrabold text-3xl lg:text-5xl tracking-tight mb-6">
+          The {config.appName} Blog
+        </h1>
+        <p className="text-lg opacity-80 leading-relaxed">
+          Learn how to ship your startup in days, not weeks. And get the latest
+          updates about the boilerplate
+        </p>
+      </section>
+
+      <section className="grid lg:grid-cols-2 mb-24 md:mb-32 gap-8">
+        {articlesToDisplay.map((article, i) => (
+          <CardArticle
+            article={article}
+            key={article.slug}
+            isImagePriority={i <= 2}
+          />
+        ))}
+      </section>
+
+      <section>
+        <p className="font-bold text-2xl lg:text-4xl tracking-tight text-center mb-8 md:mb-12">
+          Browse articles by category
+        </p>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {categories.map((category) => (
+            <CardCategory key={category.slug} category={category} tag="div" />
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+```
+
+# app/blog/layout.js
+
+```js
+import { Suspense } from "react";
+import HeaderBlog from "./_assets/components/HeaderBlog";
+import Footer from "@/components/Footer";
+
+export default async function LayoutBlog({ children }) {
+  return (
+    <div>
+      <Suspense>
+        <HeaderBlog />
+      </Suspense>
+
+      <main className="min-h-screen max-w-6xl mx-auto p-8">{children}</main>
+
+      <div className="h-24" />
+
+      <Footer />
+    </div>
+  );
+}
+
+```
+
 # public/blog/introducing-supabase/header.png
 
 This is a binary file of the type: Image
-
-# app/api/persona/route.js
-
-```js
-import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-function extractPersonaResponse(fullResponse) {
-  const match = fullResponse.match(/<persona_response>([\s\S]*)<\/persona_response>/);
-  return match ? match[1].trim() : fullResponse;
-}
-
-export async function POST(request) {
-  const body = await request.json();
-  const { message, user_id, persona, prompt, writerLevel } = body;
-
-  try {
-    const combinedPrompt = `${prompt} The writer's level is: ${writerLevel}`;
-    
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: combinedPrompt },
-        { role: "user", content: message }
-      ],
-    });
-
-    const fullPersonaResponse = completion.choices[0].message.content;
-    const filteredResponse = extractPersonaResponse(fullPersonaResponse);
-
-    // Here you could log the interaction or save it to a database
-    console.log(`User ${user_id} sent to ${persona}: ${message}`);
-    console.log(`Persona responded: ${filteredResponse}`);
-
-    return NextResponse.json({ response: filteredResponse });
-  } catch (error) {
-    console.error('OpenAI API error:', error);
-    return NextResponse.json({ error: 'An error occurred while processing your request.' }, { status: 500 });
-  }
-}
-
-```
-
-# app/api/lead/route.js
-
-```js
-import { NextResponse } from "next/server";
-import connectMongo from "@/libs/mongoose";
-import Lead from "@/models/Lead";
-
-// This route is used to store the leads that are generated from the landing page.
-// The API call is initiated by <ButtonLead /> component
-// Duplicate emails just return 200 OK
-export async function POST(req) {
-  await connectMongo();
-
-  const body = await req.json();
-
-  if (!body.email) {
-    return NextResponse.json({ error: "Email is required" }, { status: 400 });
-  }
-
-  try {
-    const lead = await Lead.findOne({ email: body.email });
-
-    if (!lead) {
-      await Lead.create({ email: body.email });
-
-      // Here you can add your own logic
-      // For instance, sending a welcome email (use the the sendEmail helper function from /libs/mailgun)
-    }
-
-    return NextResponse.json({});
-  } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
-}
-
-```
 
 # app/blog/_assets/content.js
 
@@ -6704,415 +6634,85 @@ export default async function Article({ params }) {
 
 ```
 
-# app/api/webhook/stripe/route.js
+# app/api/persona/route.js
 
 ```js
-import { NextResponse } from "next/server";
-import { headers } from "next/headers";
-import Stripe from "stripe";
-import connectMongo from "@/libs/mongoose";
-import configFile from "@/config";
-import User from "@/models/User";
-import { findCheckoutSession } from "@/libs/stripe";
+import { NextResponse } from 'next/server';
+import OpenAI from 'openai';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-// This is where we receive Stripe webhook events
-// It used to update the user data, send emails, etc...
-// By default, it'll store the user in the database
-// See more: https://shipfa.st/docs/features/payments
-export async function POST(req) {
-  await connectMongo();
+function extractPersonaResponse(fullResponse) {
+  const match = fullResponse.match(/<persona_response>([\s\S]*)<\/persona_response>/);
+  return match ? match[1].trim() : fullResponse;
+}
 
-  const body = await req.text();
-
-  const signature = headers().get("stripe-signature");
-
-  let data;
-  let eventType;
-  let event;
-
-  // verify Stripe event is legit
-  try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (err) {
-    console.error(`Webhook signature verification failed. ${err.message}`);
-    return NextResponse.json({ error: err.message }, { status: 400 });
-  }
-
-  data = event.data;
-  eventType = event.type;
+export async function POST(request) {
+  const body = await request.json();
+  const { message, user_id, persona, prompt, writerLevel } = body;
 
   try {
-    switch (eventType) {
-      case "checkout.session.completed": {
-        // First payment is successful and a subscription is created (if mode was set to "subscription" in ButtonCheckout)
-        // ✅ Grant access to the product
+    const combinedPrompt = `${prompt} The writer's level is: ${writerLevel}`;
+    
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: combinedPrompt },
+        { role: "user", content: message }
+      ],
+    });
 
-        const session = await findCheckoutSession(data.object.id);
+    const fullPersonaResponse = completion.choices[0].message.content;
+    const filteredResponse = extractPersonaResponse(fullPersonaResponse);
 
-        const customerId = session?.customer;
-        const priceId = session?.line_items?.data[0]?.price.id;
-        const userId = data.object.client_reference_id;
-        const plan = configFile.stripe.plans.find((p) => p.priceId === priceId);
+    // Here you could log the interaction or save it to a database
+    console.log(`User ${user_id} sent to ${persona}: ${message}`);
+    console.log(`Persona responded: ${filteredResponse}`);
 
-        if (!plan) break;
-
-        const customer = await stripe.customers.retrieve(customerId);
-
-        let user;
-
-        // Get or create the user. userId is normally pass in the checkout session (clientReferenceID) to identify the user when we get the webhook event
-        if (userId) {
-          user = await User.findById(userId);
-        } else if (customer.email) {
-          user = await User.findOne({ email: customer.email });
-
-          if (!user) {
-            user = await User.create({
-              email: customer.email,
-              name: customer.name,
-            });
-
-            await user.save();
-          }
-        } else {
-          console.error("No user found");
-          throw new Error("No user found");
-        }
-
-        // Update user data + Grant user access to your product. It's a boolean in the database, but could be a number of credits, etc...
-        user.priceId = priceId;
-        user.customerId = customerId;
-        user.hasAccess = true;
-        await user.save();
-
-        // Extra: send email with user link, product page, etc...
-        // try {
-        //   await sendEmail({to: ...});
-        // } catch (e) {
-        //   console.error("Email issue:" + e?.message);
-        // }
-
-        break;
-      }
-
-      case "checkout.session.expired": {
-        // User didn't complete the transaction
-        // You don't need to do anything here, by you can send an email to the user to remind him to complete the transaction, for instance
-        break;
-      }
-
-      case "customer.subscription.updated": {
-        // The customer might have changed the plan (higher or lower plan, cancel soon etc...)
-        // You don't need to do anything here, because Stripe will let us know when the subscription is canceled for good (at the end of the billing cycle) in the "customer.subscription.deleted" event
-        // You can update the user data to show a "Cancel soon" badge for instance
-        break;
-      }
-
-      case "customer.subscription.deleted": {
-        // The customer subscription stopped
-        // ❌ Revoke access to the product
-        // The customer might have changed the plan (higher or lower plan, cancel soon etc...)
-        const subscription = await stripe.subscriptions.retrieve(
-          data.object.id
-        );
-        const user = await User.findOne({ customerId: subscription.customer });
-
-        // Revoke access to your product
-        user.hasAccess = false;
-        await user.save();
-
-        break;
-      }
-
-      case "invoice.paid": {
-        // Customer just paid an invoice (for instance, a recurring payment for a subscription)
-        // ✅ Grant access to the product
-        const priceId = data.object.lines.data[0].price.id;
-        const customerId = data.object.customer;
-
-        const user = await User.findOne({ customerId });
-
-        // Make sure the invoice is for the same plan (priceId) the user subscribed to
-        if (user.priceId !== priceId) break;
-
-        // Grant user access to your product. It's a boolean in the database, but could be a number of credits, etc...
-        user.hasAccess = true;
-        await user.save();
-
-        break;
-      }
-
-      case "invoice.payment_failed":
-        // A payment failed (for instance the customer does not have a valid payment method)
-        // ❌ Revoke access to the product
-        // ⏳ OR wait for the customer to pay (more friendly):
-        //      - Stripe will automatically email the customer (Smart Retries)
-        //      - We will receive a "customer.subscription.deleted" when all retries were made and the subscription has expired
-
-        break;
-
-      default:
-      // Unhandled event type
-    }
-  } catch (e) {
-    console.error("stripe error: " + e.message + " | EVENT TYPE: " + eventType);
+    return NextResponse.json({ response: filteredResponse });
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+    return NextResponse.json({ error: 'An error occurred while processing your request.' }, { status: 500 });
   }
-
-  return NextResponse.json({});
 }
 
 ```
 
-# app/api/webhook/mailgun/route.js
+# app/api/lead/route.js
 
 ```js
 import { NextResponse } from "next/server";
-import { sendEmail } from "@/libs/mailgun";
-import config from "@/config";
+import connectMongo from "@/libs/mongoose";
+import Lead from "@/models/Lead";
 
-// This route is used to receive emails from Mailgun and forward them to our customer support email.
-// See more: https://shipfa.st/docs/features/emails
+// This route is used to store the leads that are generated from the landing page.
+// The API call is initiated by <ButtonLead /> component
+// Duplicate emails just return 200 OK
 export async function POST(req) {
-  try {
-    // extract the email content, subject and sender
-    const formData = await req.formData();
-    const sender = formData.get("From");
-    const subject = formData.get("Subject");
-    const html = formData.get("body-html");
+  await connectMongo();
 
-    // send email to the admin if forwardRepliesTo is et & emailData exists
-    if (config.mailgun.forwardRepliesTo && html && subject && sender) {
-      await sendEmail({
-        to: config.mailgun.forwardRepliesTo,
-        subject: `${config?.appName} | ${subject}`,
-        html: `<div><p><b>- Subject:</b> ${subject}</p><p><b>- From:</b> ${sender}</p><p><b>- Content:</b></p><div>${html}</div></div>`,
-        replyTo: sender,
-      });
+  const body = await req.json();
+
+  if (!body.email) {
+    return NextResponse.json({ error: "Email is required" }, { status: 400 });
+  }
+
+  try {
+    const lead = await Lead.findOne({ email: body.email });
+
+    if (!lead) {
+      await Lead.create({ email: body.email });
+
+      // Here you can add your own logic
+      // For instance, sending a welcome email (use the the sendEmail helper function from /libs/mailgun)
     }
 
     return NextResponse.json({});
   } catch (e) {
-    console.error(e?.message);
-    return NextResponse.json({ error: e?.message }, { status: 500 });
-  }
-}
-
-```
-
-# app/api/stripe/create-portal/route.js
-
-```js
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/libs/next-auth";
-import connectMongo from "@/libs/mongoose";
-import { createCustomerPortal } from "@/libs/stripe";
-import User from "@/models/User";
-
-export async function POST(req) {
-  const session = await getServerSession(authOptions);
-
-  if (session) {
-    try {
-      await connectMongo();
-
-      const body = await req.json();
-
-      const { id } = session.user;
-
-      const user = await User.findById(id);
-
-      if (!user?.customerId) {
-        return NextResponse.json(
-          {
-            error:
-              "You don't have a billing account yet. Make a purchase first.",
-          },
-          { status: 400 }
-        );
-      } else if (!body.returnUrl) {
-        return NextResponse.json(
-          { error: "Return URL is required" },
-          { status: 400 }
-        );
-      }
-
-      const stripePortalUrl = await createCustomerPortal({
-        customerId: user.customerId,
-        returnUrl: body.returnUrl,
-      });
-
-      return NextResponse.json({
-        url: stripePortalUrl,
-      });
-    } catch (e) {
-      console.error(e);
-      return NextResponse.json({ error: e?.message }, { status: 500 });
-    }
-  } else {
-    // Not Signed in
-    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
-  }
-}
-
-```
-
-# app/api/auth/[...nextauth]/route.js
-
-```js
-import NextAuth from "next-auth";
-import { authOptions } from "@/libs/next-auth";
-
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST };
-
-```
-
-# app/blog/category/[categoryId]/page.js
-
-```js
-import { categories, articles } from "../../_assets/content";
-import CardArticle from "../../_assets/components/CardArticle";
-import CardCategory from "../../_assets/components/CardCategory";
-import { getSEOTags } from "@/libs/seo";
-import config from "@/config";
-
-export async function generateMetadata({ params }) {
-  const category = categories.find(
-    (category) => category.slug === params.categoryId
-  );
-
-  return getSEOTags({
-    title: `${category.title} | Blog by ${config.appName}`,
-    description: category.description,
-    canonicalUrlRelative: `/blog/category/${category.slug}`,
-  });
-}
-
-export default async function Category({ params }) {
-  const category = categories.find(
-    (category) => category.slug === params.categoryId
-  );
-  const articlesInCategory = articles
-    .filter((article) =>
-      article.categories.map((c) => c.slug).includes(category.slug)
-    )
-    .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
-    .slice(0, 3);
-
-  return (
-    <>
-      <section className="mt-12 mb-24 md:mb-32 max-w-3xl mx-auto text-center">
-        <h1 className="font-extrabold text-3xl lg:text-5xl tracking-tight mb-6 md:mb-12">
-          {category.title}
-        </h1>
-        <p className="md:text-lg opacity-80 max-w-xl mx-auto">
-          {category.description}
-        </p>
-      </section>
-
-      <section className="mb-24">
-        <h2 className="font-bold text-2xl lg:text-4xl tracking-tight text-center mb-8 md:mb-12">
-          Most recent articles in {category.title}
-        </h2>
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          {articlesInCategory.map((article) => (
-            <CardArticle
-              key={article.slug}
-              article={article}
-              tag="h3"
-              showCategory={false}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="font-bold text-2xl lg:text-4xl tracking-tight text-center mb-8 md:mb-12">
-          Other categories you might like
-        </h2>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {categories
-            .filter((c) => c.slug !== category.slug)
-            .map((category) => (
-              <CardCategory key={category.slug} category={category} tag="h3" />
-            ))}
-        </div>
-      </section>
-    </>
-  );
-}
-
-```
-
-# app/api/stripe/create-checkout/route.js
-
-```js
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/libs/next-auth";
-import { createCheckout } from "@/libs/stripe";
-import connectMongo from "@/libs/mongoose";
-import User from "@/models/User";
-
-// This function is used to create a Stripe Checkout Session (one-time payment or subscription)
-// It's called by the <ButtonCheckout /> component
-// By default, it doesn't force users to be authenticated. But if they are, it will prefill the Checkout data with their email and/or credit card
-export async function POST(req) {
-  const body = await req.json();
-
-  if (!body.priceId) {
-    return NextResponse.json(
-      { error: "Price ID is required" },
-      { status: 400 }
-    );
-  } else if (!body.successUrl || !body.cancelUrl) {
-    return NextResponse.json(
-      { error: "Success and cancel URLs are required" },
-      { status: 400 }
-    );
-  } else if (!body.mode) {
-    return NextResponse.json(
-      {
-        error:
-          "Mode is required (either 'payment' for one-time payments or 'subscription' for recurring subscription)",
-      },
-      { status: 400 }
-    );
-  }
-
-  try {
-    const session = await getServerSession(authOptions);
-
-    await connectMongo();
-
-    const user = await User.findById(session?.user?.id);
-
-    const { priceId, mode, successUrl, cancelUrl } = body;
-
-    const stripeSessionURL = await createCheckout({
-      priceId,
-      mode,
-      successUrl,
-      cancelUrl,
-      // If user is logged in, it will pass the user ID to the Stripe Session so it can be retrieved in the webhook later
-      clientReferenceId: user?._id?.toString(),
-      // If user is logged in, this will automatically prefill Checkout data like email and/or credit card for faster checkout
-      user,
-      // If you send coupons from the frontend, you can pass it here
-      // couponId: body.couponId,
-    });
-
-    return NextResponse.json({ url: stripeSessionURL });
-  } catch (e) {
     console.error(e);
-    return NextResponse.json({ error: e?.message }, { status: 500 });
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
 
@@ -7197,6 +6797,85 @@ export default async function Author({ params }) {
           {articlesByAuthor.map((article) => (
             <CardArticle key={article.slug} article={article} />
           ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+```
+
+# app/blog/category/[categoryId]/page.js
+
+```js
+import { categories, articles } from "../../_assets/content";
+import CardArticle from "../../_assets/components/CardArticle";
+import CardCategory from "../../_assets/components/CardCategory";
+import { getSEOTags } from "@/libs/seo";
+import config from "@/config";
+
+export async function generateMetadata({ params }) {
+  const category = categories.find(
+    (category) => category.slug === params.categoryId
+  );
+
+  return getSEOTags({
+    title: `${category.title} | Blog by ${config.appName}`,
+    description: category.description,
+    canonicalUrlRelative: `/blog/category/${category.slug}`,
+  });
+}
+
+export default async function Category({ params }) {
+  const category = categories.find(
+    (category) => category.slug === params.categoryId
+  );
+  const articlesInCategory = articles
+    .filter((article) =>
+      article.categories.map((c) => c.slug).includes(category.slug)
+    )
+    .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+    .slice(0, 3);
+
+  return (
+    <>
+      <section className="mt-12 mb-24 md:mb-32 max-w-3xl mx-auto text-center">
+        <h1 className="font-extrabold text-3xl lg:text-5xl tracking-tight mb-6 md:mb-12">
+          {category.title}
+        </h1>
+        <p className="md:text-lg opacity-80 max-w-xl mx-auto">
+          {category.description}
+        </p>
+      </section>
+
+      <section className="mb-24">
+        <h2 className="font-bold text-2xl lg:text-4xl tracking-tight text-center mb-8 md:mb-12">
+          Most recent articles in {category.title}
+        </h2>
+
+        <div className="grid lg:grid-cols-2 gap-8">
+          {articlesInCategory.map((article) => (
+            <CardArticle
+              key={article.slug}
+              article={article}
+              tag="h3"
+              showCategory={false}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="font-bold text-2xl lg:text-4xl tracking-tight text-center mb-8 md:mb-12">
+          Other categories you might like
+        </h2>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {categories
+            .filter((c) => c.slug !== category.slug)
+            .map((category) => (
+              <CardCategory key={category.slug} category={category} tag="h3" />
+            ))}
         </div>
       </section>
     </>
@@ -7670,6 +7349,341 @@ const Avatar = ({ article }) => {
 };
 
 export default Avatar;
+
+```
+
+# app/api/webhook/stripe/route.js
+
+```js
+import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import Stripe from "stripe";
+import connectMongo from "@/libs/mongoose";
+import configFile from "@/config";
+import User from "@/models/User";
+import { findCheckoutSession } from "@/libs/stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+// This is where we receive Stripe webhook events
+// It used to update the user data, send emails, etc...
+// By default, it'll store the user in the database
+// See more: https://shipfa.st/docs/features/payments
+export async function POST(req) {
+  await connectMongo();
+
+  const body = await req.text();
+
+  const signature = headers().get("stripe-signature");
+
+  let data;
+  let eventType;
+  let event;
+
+  // verify Stripe event is legit
+  try {
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+  } catch (err) {
+    console.error(`Webhook signature verification failed. ${err.message}`);
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
+
+  data = event.data;
+  eventType = event.type;
+
+  try {
+    switch (eventType) {
+      case "checkout.session.completed": {
+        // First payment is successful and a subscription is created (if mode was set to "subscription" in ButtonCheckout)
+        // ✅ Grant access to the product
+
+        const session = await findCheckoutSession(data.object.id);
+
+        const customerId = session?.customer;
+        const priceId = session?.line_items?.data[0]?.price.id;
+        const userId = data.object.client_reference_id;
+        const plan = configFile.stripe.plans.find((p) => p.priceId === priceId);
+
+        if (!plan) break;
+
+        const customer = await stripe.customers.retrieve(customerId);
+
+        let user;
+
+        // Get or create the user. userId is normally pass in the checkout session (clientReferenceID) to identify the user when we get the webhook event
+        if (userId) {
+          user = await User.findById(userId);
+        } else if (customer.email) {
+          user = await User.findOne({ email: customer.email });
+
+          if (!user) {
+            user = await User.create({
+              email: customer.email,
+              name: customer.name,
+            });
+
+            await user.save();
+          }
+        } else {
+          console.error("No user found");
+          throw new Error("No user found");
+        }
+
+        // Update user data + Grant user access to your product. It's a boolean in the database, but could be a number of credits, etc...
+        user.priceId = priceId;
+        user.customerId = customerId;
+        user.hasAccess = true;
+        await user.save();
+
+        // Extra: send email with user link, product page, etc...
+        // try {
+        //   await sendEmail({to: ...});
+        // } catch (e) {
+        //   console.error("Email issue:" + e?.message);
+        // }
+
+        break;
+      }
+
+      case "checkout.session.expired": {
+        // User didn't complete the transaction
+        // You don't need to do anything here, by you can send an email to the user to remind him to complete the transaction, for instance
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        // The customer might have changed the plan (higher or lower plan, cancel soon etc...)
+        // You don't need to do anything here, because Stripe will let us know when the subscription is canceled for good (at the end of the billing cycle) in the "customer.subscription.deleted" event
+        // You can update the user data to show a "Cancel soon" badge for instance
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        // The customer subscription stopped
+        // ❌ Revoke access to the product
+        // The customer might have changed the plan (higher or lower plan, cancel soon etc...)
+        const subscription = await stripe.subscriptions.retrieve(
+          data.object.id
+        );
+        const user = await User.findOne({ customerId: subscription.customer });
+
+        // Revoke access to your product
+        user.hasAccess = false;
+        await user.save();
+
+        break;
+      }
+
+      case "invoice.paid": {
+        // Customer just paid an invoice (for instance, a recurring payment for a subscription)
+        // ✅ Grant access to the product
+        const priceId = data.object.lines.data[0].price.id;
+        const customerId = data.object.customer;
+
+        const user = await User.findOne({ customerId });
+
+        // Make sure the invoice is for the same plan (priceId) the user subscribed to
+        if (user.priceId !== priceId) break;
+
+        // Grant user access to your product. It's a boolean in the database, but could be a number of credits, etc...
+        user.hasAccess = true;
+        await user.save();
+
+        break;
+      }
+
+      case "invoice.payment_failed":
+        // A payment failed (for instance the customer does not have a valid payment method)
+        // ❌ Revoke access to the product
+        // ⏳ OR wait for the customer to pay (more friendly):
+        //      - Stripe will automatically email the customer (Smart Retries)
+        //      - We will receive a "customer.subscription.deleted" when all retries were made and the subscription has expired
+
+        break;
+
+      default:
+      // Unhandled event type
+    }
+  } catch (e) {
+    console.error("stripe error: " + e.message + " | EVENT TYPE: " + eventType);
+  }
+
+  return NextResponse.json({});
+}
+
+```
+
+# app/api/webhook/mailgun/route.js
+
+```js
+import { NextResponse } from "next/server";
+import { sendEmail } from "@/libs/mailgun";
+import config from "@/config";
+
+// This route is used to receive emails from Mailgun and forward them to our customer support email.
+// See more: https://shipfa.st/docs/features/emails
+export async function POST(req) {
+  try {
+    // extract the email content, subject and sender
+    const formData = await req.formData();
+    const sender = formData.get("From");
+    const subject = formData.get("Subject");
+    const html = formData.get("body-html");
+
+    // send email to the admin if forwardRepliesTo is et & emailData exists
+    if (config.mailgun.forwardRepliesTo && html && subject && sender) {
+      await sendEmail({
+        to: config.mailgun.forwardRepliesTo,
+        subject: `${config?.appName} | ${subject}`,
+        html: `<div><p><b>- Subject:</b> ${subject}</p><p><b>- From:</b> ${sender}</p><p><b>- Content:</b></p><div>${html}</div></div>`,
+        replyTo: sender,
+      });
+    }
+
+    return NextResponse.json({});
+  } catch (e) {
+    console.error(e?.message);
+    return NextResponse.json({ error: e?.message }, { status: 500 });
+  }
+}
+
+```
+
+# app/api/stripe/create-portal/route.js
+
+```js
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/libs/next-auth";
+import connectMongo from "@/libs/mongoose";
+import { createCustomerPortal } from "@/libs/stripe";
+import User from "@/models/User";
+
+export async function POST(req) {
+  const session = await getServerSession(authOptions);
+
+  if (session) {
+    try {
+      await connectMongo();
+
+      const body = await req.json();
+
+      const { id } = session.user;
+
+      const user = await User.findById(id);
+
+      if (!user?.customerId) {
+        return NextResponse.json(
+          {
+            error:
+              "You don't have a billing account yet. Make a purchase first.",
+          },
+          { status: 400 }
+        );
+      } else if (!body.returnUrl) {
+        return NextResponse.json(
+          { error: "Return URL is required" },
+          { status: 400 }
+        );
+      }
+
+      const stripePortalUrl = await createCustomerPortal({
+        customerId: user.customerId,
+        returnUrl: body.returnUrl,
+      });
+
+      return NextResponse.json({
+        url: stripePortalUrl,
+      });
+    } catch (e) {
+      console.error(e);
+      return NextResponse.json({ error: e?.message }, { status: 500 });
+    }
+  } else {
+    // Not Signed in
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
+}
+
+```
+
+# app/api/stripe/create-checkout/route.js
+
+```js
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/libs/next-auth";
+import { createCheckout } from "@/libs/stripe";
+import connectMongo from "@/libs/mongoose";
+import User from "@/models/User";
+
+// This function is used to create a Stripe Checkout Session (one-time payment or subscription)
+// It's called by the <ButtonCheckout /> component
+// By default, it doesn't force users to be authenticated. But if they are, it will prefill the Checkout data with their email and/or credit card
+export async function POST(req) {
+  const body = await req.json();
+
+  if (!body.priceId) {
+    return NextResponse.json(
+      { error: "Price ID is required" },
+      { status: 400 }
+    );
+  } else if (!body.successUrl || !body.cancelUrl) {
+    return NextResponse.json(
+      { error: "Success and cancel URLs are required" },
+      { status: 400 }
+    );
+  } else if (!body.mode) {
+    return NextResponse.json(
+      {
+        error:
+          "Mode is required (either 'payment' for one-time payments or 'subscription' for recurring subscription)",
+      },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const session = await getServerSession(authOptions);
+
+    await connectMongo();
+
+    const user = await User.findById(session?.user?.id);
+
+    const { priceId, mode, successUrl, cancelUrl } = body;
+
+    const stripeSessionURL = await createCheckout({
+      priceId,
+      mode,
+      successUrl,
+      cancelUrl,
+      // If user is logged in, it will pass the user ID to the Stripe Session so it can be retrieved in the webhook later
+      clientReferenceId: user?._id?.toString(),
+      // If user is logged in, this will automatically prefill Checkout data like email and/or credit card for faster checkout
+      user,
+      // If you send coupons from the frontend, you can pass it here
+      // couponId: body.couponId,
+    });
+
+    return NextResponse.json({ url: stripeSessionURL });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: e?.message }, { status: 500 });
+  }
+}
+
+```
+
+# app/api/auth/[...nextauth]/route.js
+
+```js
+import NextAuth from "next-auth";
+import { authOptions } from "@/libs/next-auth";
+
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
 
 ```
 
