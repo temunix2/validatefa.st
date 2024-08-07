@@ -43,3 +43,4 @@ public/sitemap-0.xml
 
 #venv
 /wgenv/
+.env.prod
