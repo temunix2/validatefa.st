@@ -3,6 +3,7 @@ import TestimonialsAvatars from "./TestimonialsAvatars";
 import config from "@/config";
 import heroImage from "@/app/hero_image.png";
 import ButtonCheckout from "./ButtonCheckout";
+import ButtonLead from "./ButtonLead";
 
 const Hero = () => {
 
@@ -33,10 +34,11 @@ const Hero = () => {
         Your always-available AI writing circle. Get instant, diverse feedback on your stories without the inconsistency of traditional groups. Elevate your writing anytime.
         </p>
         <div className="w-full sm:w-auto">
-          <ButtonCheckout mode = "subscription" priceId={defaultPriceId} 
+          {/* <ButtonCheckout mode = "subscription" priceId={defaultPriceId} 
           style="gradient" className="btn-wide">
             Enhance Your Writing
-          </ButtonCheckout>
+          </ButtonCheckout> */}
+          <ButtonLead />
         </div>
 
         <TestimonialsAvatars priority={true} />
